@@ -54,7 +54,7 @@ async function getDashboardStats() {
 
 // Statistiques des utilisateurs
 async function getUserStats() {
-  const [total, active, byRole, byClass, recentRegistrations] =
+  const [total, active, byRoleRaw, byClass, recentRegistrations, roles] =
     await Promise.all([
       prisma.users.count({ where: { deleted: false } }),
       prisma.users.count({ where: { deleted: false, active: true } }),
@@ -62,11 +62,6 @@ async function getUserStats() {
         by: ['role_id'],
         where: { deleted: false, active: true },
         _count: { id: true },
-        include: {
-          roles: {
-            select: { slug: true, name: true },
-          },
-        },
       }),
       prisma.users.groupBy({
         by: ['class_id'],
@@ -81,7 +76,19 @@ async function getUserStats() {
           },
         },
       }),
+      prisma.roles.findMany({
+        select: { id: true, slug: true, name: true },
+      }),
     ]);
+
+  // Enrichir les données byRole avec les informations des rôles
+  const byRole = byRoleRaw.map((roleData) => {
+    const role = roles.find((r) => r.id === roleData.role_id);
+    return {
+      ...roleData,
+      role: role ? { slug: role.slug, name: role.name } : null,
+    };
+  });
 
   return {
     total,

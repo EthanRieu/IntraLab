@@ -1,0 +1,33 @@
+{
+  "name": "intralab",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "dotenv -e .env.development -- nuxt dev",
+    "generate": "nuxt generate",
+    "preview": "dotenv -e .env.production -- nuxt preview",
+    "postinstall": "nuxt prepare",
+    "prisma:dev:generate": "dotenv -e .env.development -- prisma generate",
+    "prisma:dev:migrate": "dotenv -e .env.development -- prisma migrate dev --name init",
+    "prisma:prod:deploy": "dotenv -e .env.production -- prisma migrate deploy"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.16.2",
+    "@prisma/nuxt": "^0.3.0",
+    "@tailwindcss/vite": "^4.1.13",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "bcryptjs": "^3.0.2",
+    "jsonwebtoken": "^9.0.2",
+    "nuxt": "^4.1.2",
+    "prisma": "^6.16.2",
+    "tailwindcss": "^4.1.13",
+    "vue": "^3.5.21",
+    "vue-router": "^4.5.1",
+    "zod": "^4.1.11"
+  },
+  "devDependencies": {
+    "dotenv-cli": "^7.4.4"
+  }
+}

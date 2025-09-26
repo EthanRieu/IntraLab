@@ -1,0 +1,229 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model articles {
+  id               String         @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  title            String         @db.VarChar(255)
+  content          String
+  category         String?        @db.VarChar(100)
+  status           String?        @default("draft") @db.VarChar(20)
+  rejection_reason String?
+  active           Boolean?       @default(true)
+  deleted          Boolean?       @default(false)
+  created_at       DateTime?      @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime?      @default(now()) @db.Timestamptz(6)
+  published_at     DateTime?      @db.Timestamptz(6)
+  user_article     user_article[]
+
+  @@index([category], map: "idx_articles_category")
+  @@index([published_at], map: "idx_articles_published")
+  @@index([status], map: "idx_articles_status")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model classes {
+  id                 String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  slug               String    @unique @db.VarChar(10)
+  name               String    @db.VarChar(255)
+  level              Int
+  has_specialization Boolean?  @default(false)
+  active             Boolean?  @default(true)
+  deleted            Boolean?  @default(false)
+  created_at         DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime? @default(now()) @db.Timestamptz(6)
+  users              users[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model inventory {
+  item_id            String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  item_name          String    @db.VarChar(255)
+  item_description   String?
+  category           String?   @db.VarChar(100)
+  quantity           Int       @default(0)
+  quantity_available Int       @default(0)
+  location           String?   @db.VarChar(100)
+  active             Boolean?  @default(true)
+  deleted            Boolean?  @default(false)
+  created_at         DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime? @default(now()) @db.Timestamptz(6)
+  loan               loan[]
+
+  @@index([active, deleted], map: "idx_inventory_active")
+  @@index([category], map: "idx_inventory_category")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model loan {
+  id                 String      @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  borrower_id        String      @db.Uuid
+  item_id            String      @db.Uuid
+  quantity_requested Int         @default(1)
+  quantity_approved  Int?        @default(0)
+  status             String?     @default("pending") @db.VarChar(20)
+  active             Boolean?    @default(true)
+  deleted            Boolean?    @default(false)
+  created_at         DateTime?   @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime?   @default(now()) @db.Timestamptz(6)
+  users              users       @relation(fields: [borrower_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  inventory          inventory   @relation(fields: [item_id], references: [item_id], onDelete: Cascade, onUpdate: NoAction)
+  user_loan          user_loan[]
+
+  @@index([borrower_id], map: "idx_loan_borrower")
+  @@index([created_at], map: "idx_loan_dates")
+  @@index([status], map: "idx_loan_status")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model notifications {
+  id           String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  user_id      String    @db.Uuid
+  type         String    @db.VarChar(50)
+  title        String    @db.VarChar(255)
+  message      String?
+  related_id   String?   @db.Uuid
+  related_type String?   @db.VarChar(50)
+  read         Boolean?  @default(false)
+  created_at   DateTime? @default(now()) @db.Timestamptz(6)
+  read_at      DateTime? @db.Timestamptz(6)
+  users        users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([read], map: "idx_notifications_read")
+  @@index([type], map: "idx_notifications_type")
+  @@index([user_id], map: "idx_notifications_user")
+}
+
+model roles {
+  id         String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  slug       String    @unique @db.VarChar(64)
+  name       String    @db.VarChar(255)
+  active     Boolean?  @default(true)
+  deleted    Boolean?  @default(false)
+  created_at DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at DateTime? @default(now()) @db.Timestamptz(6)
+  users      users[]
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model spec {
+  id         String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  slug       String    @unique @db.VarChar(64)
+  name       String    @db.VarChar(255)
+  active     Boolean?  @default(true)
+  deleted    Boolean?  @default(false)
+  created_at DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at DateTime? @default(now()) @db.Timestamptz(6)
+  users      users[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model store {
+  id                           String       @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  seller_id                    String       @db.Uuid
+  buyer_id                     String?      @db.Uuid
+  transaction_date             DateTime?    @db.Timestamptz(6)
+  status                       String?      @default("active") @db.VarChar(20)
+  created_at                   DateTime?    @default(now()) @db.Timestamptz(6)
+  updated_at                   DateTime?    @default(now()) @db.Timestamptz(6)
+  users_store_buyer_idTousers  users?       @relation("store_buyer_idTousers", fields: [buyer_id], references: [id], onUpdate: NoAction)
+  users_store_seller_idTousers users        @relation("store_seller_idTousers", fields: [seller_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  store_item                   store_item[]
+
+  @@index([seller_id], map: "idx_store_seller")
+  @@index([status], map: "idx_store_status")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model store_item {
+  id          String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  store_id    String    @db.Uuid
+  name        String    @db.VarChar(255)
+  description String?
+  category    String?   @db.VarChar(100)
+  condition   String?   @db.VarChar(20)
+  price       Decimal   @db.Decimal(10, 2)
+  brand       String?   @db.VarChar(255)
+  images      Json?
+  active      Boolean?  @default(true)
+  deleted     Boolean?  @default(false)
+  created_at  DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime? @default(now()) @db.Timestamptz(6)
+  store       store     @relation(fields: [store_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([active, deleted], map: "idx_store_item_active")
+  @@index([category], map: "idx_store_item_category")
+}
+
+model user_article {
+  user_id                                String    @db.Uuid
+  article_id                             String    @db.Uuid
+  link_to                                String?   @db.VarChar(255)
+  img                                    Bytes?
+  validated_by                           String?   @db.Uuid
+  validated_at                           DateTime? @db.Timestamptz(6)
+  articles                               articles  @relation(fields: [article_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users_user_article_user_idTousers      users     @relation("user_article_user_idTousers", fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users_user_article_validated_byTousers users?    @relation("user_article_validated_byTousers", fields: [validated_by], references: [id], onUpdate: NoAction)
+
+  @@id([user_id, article_id])
+}
+
+model user_loan {
+  user_id                            String    @db.Uuid
+  loan_id                            String    @db.Uuid
+  approved_by                        String?   @db.Uuid
+  date_emprunt                       DateTime? @db.Timestamptz(6)
+  date_retour_prevue                 DateTime? @db.Timestamptz(6)
+  date_retour_effective              DateTime? @db.Timestamptz(6)
+  notes                              String?
+  users_user_loan_approved_byTousers users?    @relation("user_loan_approved_byTousers", fields: [approved_by], references: [id], onUpdate: NoAction)
+  loan                               loan      @relation(fields: [loan_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users_user_loan_user_idTousers     users     @relation("user_loan_user_idTousers", fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([user_id, loan_id])
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model users {
+  id                                            String          @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  first_name                                    String          @db.VarChar(64)
+  last_name                                     String          @db.VarChar(64)
+  email                                         String          @unique @db.VarChar(255)
+  phone                                         String?         @db.VarChar(64)
+  password                                      String?         @db.VarChar(255)
+  role_id                                       String          @db.Uuid
+  class_id                                      String?         @db.Uuid
+  spec_id                                       String?         @db.Uuid
+  active                                        Boolean?        @default(true)
+  deleted                                       Boolean?        @default(false)
+  created_at                                    DateTime?       @default(now()) @db.Timestamptz(6)
+  updated_at                                    DateTime?       @default(now()) @db.Timestamptz(6)
+  loan                                          loan[]
+  notifications                                 notifications[]
+  store_store_buyer_idTousers                   store[]         @relation("store_buyer_idTousers")
+  store_store_seller_idTousers                  store[]         @relation("store_seller_idTousers")
+  user_article_user_article_user_idTousers      user_article[]  @relation("user_article_user_idTousers")
+  user_article_user_article_validated_byTousers user_article[]  @relation("user_article_validated_byTousers")
+  user_loan_user_loan_approved_byTousers        user_loan[]     @relation("user_loan_approved_byTousers")
+  user_loan_user_loan_user_idTousers            user_loan[]     @relation("user_loan_user_idTousers")
+  classes                                       classes?        @relation(fields: [class_id], references: [id], onUpdate: NoAction)
+  roles                                         roles           @relation(fields: [role_id], references: [id], onUpdate: NoAction)
+  spec                                          spec?           @relation(fields: [spec_id], references: [id], onUpdate: NoAction)
+
+  @@index([active, deleted], map: "idx_users_active")
+  @@index([class_id], map: "idx_users_class")
+  @@index([email], map: "idx_users_email")
+  @@index([role_id], map: "idx_users_role")
+  @@index([spec_id], map: "idx_users_spec")
+}

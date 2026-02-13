@@ -8,9 +8,10 @@ export default defineNuxtConfig({
     plugins: [tailwindcss()],
   },
   modules: [
-    // '@prisma/nuxt' // Temporairement désactivé pour test
+    '@prisma/nuxt'
   ],
   typescript: {
     typeCheck: false,
   },
 });
+

@@ -5,16 +5,7 @@
     background-image: linear-gradient(to bottom, #1A1A1A, #0A0A0A);
   }
 
-  .liquid-glass {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.01) 100%);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 
-      0 4px 30px rgba(0, 0, 0, 0.1),
-      inset 1px 1px 0 0 rgba(255, 255, 255, 0.6),
-      inset -1px -1px 0 0 rgba(255, 255, 255, 0.05);
-  }
+
 
 
 }

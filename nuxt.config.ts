@@ -6,6 +6,11 @@ export default defineNuxtConfig({
   css: ['~/assets/css/main.css'],
   vite: {
     plugins: [tailwindcss()],
+    resolve: {
+      alias: {
+        '.prisma/client/index-browser': './node_modules/@prisma/client/index-browser.js',
+      },
+    },
   },
   modules: [
     '@prisma/nuxt'

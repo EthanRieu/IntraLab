@@ -1,11 +1,20 @@
 <template>
   <div class="container mx-auto px-4 py-8">
     <div class="mb-8 flex flex-col md:flex-row justify-between items-center gap-4">
-      <h1 class="text-6xl font-bold bg-clip-text text-white">
+      <h1 class="text-6xl font-bold bg-clip-text">
         EMPRUNTS.
       </h1>
 
       <div class="flex flex-row gap-4 items-center">
+        <!-- Create Item Button (RP/Admin only) -->
+        <button v-if="canManageInventory" @click="isCreateModalOpen = true"
+          class="px-5 py-2.5 bg-white text-black font-extrabold uppercase text-[11px] tracking-[0.15em] rounded-full hover:bg-gray-200 hover:scale-105 active:scale-95 transition-all shadow-[0_0_20px_rgba(255,255,255,0.15)] flex items-center shrink-0">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+          </svg>
+          Ajouter un équipement
+        </button>
+
         <!-- Search Pill -->
         <div class="relative group">
           <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -15,7 +24,7 @@
                 d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
           </div>
-          <input v-model="search" type="text" placeholder="Rechercher un article"
+          <input v-model="search" type="text" placeholder="Rechercher un équipement"
             class="w-64 md:w-80 pl-10 pr-4 py-2 bg-[#1a1a1a]/80 border border-white/10 rounded-full text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-white/20 transition-all shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1)] hover:bg-[#1a1a1a]" />
         </div>
 
@@ -23,7 +32,7 @@
         <div class="relative">
           <select v-model="selectedCategory"
             class="appearance-none pl-4 pr-10 py-2 bg-[#1a1a1a]/80 border border-white/10 rounded-full text-white focus:outline-none focus:ring-1 focus:ring-white/20 cursor-pointer shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1)] hover:bg-[#1a1a1a]">
-            <option value="">Filtres</option>
+            <option value="">Catégories</option>
             <option v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</option>
           </select>
           <div class="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-white">
@@ -38,7 +47,7 @@
 
     <!-- Loading State -->
     <div v-if="pending" class="flex justify-center items-center py-20">
-      <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white"></div>
+      <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
     </div>
 
     <!-- Error State -->
@@ -51,105 +60,186 @@
 
     <!-- Empty State -->
     <div v-else-if="!items.length" class="text-center py-20 text-gray-400">
-      <p class="text-xl">Aucun article trouvé.</p>
+      <p class="text-xl">Aucun équipement trouvé.</p>
     </div>
 
     <!-- Items Grid -->
-    <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12 justify-items-center mt-12">
+    <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       <NuxtLink v-for="item in items" :key="item.id" :to="'/Loans/' + item.id"
-        class="block group relative h-[383px] w-full max-w-[320px] rounded-[30px] overflow-hidden hover:scale-[1.02] transition-all duration-300 shadow-cyan-500/10 cursor-pointer"
-        :style="getCardStyle(item.id)">
+        class="group relative rounded-[24px] overflow-hidden border border-white/8 hover:border-white/20 transition-all duration-300 hover:scale-[1.02] block cursor-pointer"
+        style="background: rgba(255,255,255,0.03);">
 
-        <!-- Glow Behind Effect -->
-        <div
-          class="absolute inset-0 rounded-[30px] transition-opacity duration-300 pointer-events-none opacity-80 group-hover:opacity-100"
-          :style="{ boxShadow: `0 0 60px 5px ${imageColors[item.id] || 'transparent'}` }"></div>
-
-        <!-- Background Image or Fallback -->
-        <img v-if="item.imageUrl" :src="item.imageUrl" :alt="item.name" crossorigin="anonymous"
-          @load="extractColor($event, item.id)"
-          class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 z-10 rounded-[30px]" />
-
-        <!-- API Mock Data for missing images (based on name for the mockup match) -->
-        <img v-else-if="item.name.toLowerCase().includes('flipper')"
-          src="https://images.unsplash.com/photo-1662908869151-244a56a6ec15?q=80&w=600&auto=format&fit=crop"
-          crossorigin="anonymous" @load="extractColor($event, item.id)"
-          class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 z-10 rounded-[30px]" />
-        <img v-else-if="item.name.toLowerCase().includes('câble') || item.name.toLowerCase().includes('cable')"
-          src="https://images.unsplash.com/photo-1544186450-9a28db9450a8?q=80&w=600&auto=format&fit=crop"
-          crossorigin="anonymous" @load="extractColor($event, item.id)"
-          class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 z-10 rounded-[30px]" />
-        <img v-else-if="item.name.toLowerCase().includes('raspberry') || item.name.toLowerCase().includes('pi')"
-          src="https://images.unsplash.com/photo-1631551608753-159654782cb9?q=80&w=600&auto=format&fit=crop"
-          crossorigin="anonymous" @load="extractColor($event, item.id)"
-          class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 z-10 rounded-[30px]" />
-
-        <div v-else
-          class="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center z-10 rounded-[30px]"
-          @vue:mounted="setDefaultColor(item.id, '#ffffff')">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-white/20" fill="none" viewBox="0 0 24 24"
-            stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1"
-              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-          </svg>
+        <!-- Cover Image -->
+        <div class="relative h-48 overflow-hidden">
+          <img v-if="item.imageUrl" :src="item.imageUrl" :alt="item.name"
+            class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+          <img v-else-if="item.name.toLowerCase().includes('flipper')"
+            src="https://images.unsplash.com/photo-1662908869151-244a56a6ec15?q=80&w=600&auto=format&fit=crop"
+            :alt="item.name"
+            class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+          <img v-else-if="item.name.toLowerCase().includes('câble') || item.name.toLowerCase().includes('cable')"
+            src="https://images.unsplash.com/photo-1544186450-9a28db9450a8?q=80&w=600&auto=format&fit=crop"
+            :alt="item.name"
+            class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+          <img v-else-if="item.name.toLowerCase().includes('raspberry') || item.name.toLowerCase().includes('pi')"
+            src="https://images.unsplash.com/photo-1631551608753-159654782cb9?q=80&w=600&auto=format&fit=crop"
+            :alt="item.name"
+            class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+          <div v-else
+            class="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-800/60 to-gray-900/60">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-white/10" fill="none" viewBox="0 0 24 24"
+              stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1"
+                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          </div>
+          <!-- Category badge overlay -->
+          <div class="absolute top-3 left-3">
+            <span class="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-black/50 backdrop-blur-sm text-white/80 border border-white/10">
+              {{ item.category || 'Non catégorisé' }}
+            </span>
+          </div>
+          <!-- Stock badge -->
+          <div class="absolute top-3 right-3">
+            <span class="text-[10px] font-bold px-2.5 py-1 rounded-full bg-black/50 backdrop-blur-sm border border-white/10"
+              :class="item.quantityAvailable > 0 ? 'text-green-400' : 'text-red-400'">
+              {{ item.quantityAvailable > 0 ? `${item.quantityAvailable} dispo.` : 'Indisponible' }}
+            </span>
+          </div>
         </div>
 
-        <!-- Glass Overlay at bottom -->
-        <div class="absolute bottom-2 left-2 right-2 h-auto z-20">
-          <GlassSurface :border-radius="20" :opacity="0.53" :border-width="0.07" :brightness="50" :blur="11"
-            :displace="0.5" :distortion-scale="0.5" :red-offset="0" :green-offset="0" :blue-offset="0"
-            :background-opacity="0.1" mix-blend-mode="normal" width="100%" height="auto" class="overflow-hidden">
-            <div class="p-4 w-full flex flex-col gap-1">
-              <div class="flex justify-between items-start">
-                <h2 class="text-base font-bold text-white leading-tight line-clamp-1 truncate pr-2 max-w-[70%]">
-                  {{ item.name }}
-                </h2>
-                <span class="text-xs font-medium text-gray-200 whitespace-nowrap pt-[2px]">
-                  Stock : {{ item.quantityAvailable }}
-                </span>
-              </div>
+        <!-- Content -->
+        <div class="p-5">
+          <h2 class="text-base font-bold text-white leading-snug line-clamp-2 group-hover:text-blue-300 transition-colors mb-2">
+            {{ item.name }}
+          </h2>
+          <p class="text-sm text-gray-500 line-clamp-2 leading-relaxed">{{ item.description }}</p>
 
-              <div class="flex justify-between items-end mt-1">
-                <p class="text-gray-300 text-sm line-clamp-1 w-5/6 truncate">
-                  {{ item.category || 'Non catégorisé' }}
-                </p>
-                <div class="bg-white/10 rounded-md p-1 backdrop-blur-sm self-end">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"
-                    stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                  </svg>
-                </div>
-              </div>
-            </div>
-          </GlassSurface>
+          <div class="flex items-center justify-end mt-4 pt-3 border-t border-white/5">
+            <span class="text-xs text-gray-600 group-hover:text-white transition-colors flex items-center gap-1">
+              Voir l'équipement
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+              </svg>
+            </span>
+          </div>
         </div>
       </NuxtLink>
     </div>
 
     <!-- Pagination -->
-    <div v-if="pagination.totalPages > 1" class="mt-16 flex justify-center gap-2">
+    <div v-if="pagination.totalPages > 1" class="mt-12 flex justify-center gap-2">
       <button @click="page--" :disabled="!pagination.hasPrev"
-        class="px-4 py-2 rounded-lg bg-white/10 border border-white/20 hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed transition text-white">
+        class="px-4 py-2 rounded-lg bg-white/10 border border-white/20 hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed transition">
         Précédent
       </button>
 
-      <span class="px-4 py-2 bg-white/5 text-white rounded-lg border border-white/10">
+      <span class="px-4 py-2 bg-white/5 rounded-lg border border-white/10">
         Page {{ pagination.page }} sur {{ pagination.totalPages }}
       </span>
 
       <button @click="page++" :disabled="!pagination.hasNext"
-        class="px-4 py-2 rounded-lg bg-white/10 border border-white/20 hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed transition text-white">
+        class="px-4 py-2 rounded-lg bg-white/10 border border-white/20 hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed transition">
         Suivant
       </button>
     </div>
+
+    <!-- Create Item Modal -->
+    <Teleport to="body">
+      <Transition name="modal">
+        <div v-if="isCreateModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style="background: rgba(0,0,0,0.7);" @click.self="isCreateModalOpen = false">
+          <div class="w-full max-w-2xl rounded-[24px] overflow-hidden border border-white/10 max-h-[90vh] flex flex-col"
+            style="background: #111;">
+
+            <div class="flex items-center justify-between px-6 py-4 border-b border-white/10">
+              <h3 class="text-xl font-bold text-white">Ajouter un équipement</h3>
+              <button @click="isCreateModalOpen = false"
+                class="w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/10 transition text-gray-400">
+                ✕
+              </button>
+            </div>
+
+            <div class="overflow-y-auto flex-1 px-6 py-6 custom-scrollbar">
+              <div class="space-y-6">
+
+                <!-- Image Upload -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-400 mb-2">Image</label>
+                  <FileUpload @update:file="f => itemImage = f" />
+                </div>
+
+                <!-- Name -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-400 mb-2">Nom <span class="text-red-500">*</span></label>
+                  <input v-model="itemForm.name" type="text" placeholder="Nom de l'équipement"
+                    class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition">
+                </div>
+
+                <!-- Description -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-400 mb-2">Description</label>
+                  <textarea v-model="itemForm.description" rows="3" placeholder="Description de l'équipement..."
+                    class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition resize-none"></textarea>
+                </div>
+
+                <!-- Category -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-400 mb-2">Catégorie</label>
+                  <input v-model="itemForm.category" type="text" placeholder="Ex: Électronique, Câble, Outil..."
+                    class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition">
+                </div>
+
+                <!-- Quantity row -->
+                <div class="grid grid-cols-2 gap-4">
+                  <div>
+                    <label class="block text-sm font-medium text-gray-400 mb-2">Quantité totale <span class="text-red-500">*</span></label>
+                    <input v-model.number="itemForm.quantity" type="number" min="0" placeholder="0"
+                      class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition">
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-400 mb-2">Quantité disponible</label>
+                    <input v-model.number="itemForm.quantityAvailable" type="number" min="0" :placeholder="String(itemForm.quantity || 0)"
+                      class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition">
+                    <p class="text-[11px] text-gray-600 mt-1">Par défaut égale à la quantité totale</p>
+                  </div>
+                </div>
+
+                <!-- Location -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-400 mb-2">Emplacement</label>
+                  <input v-model="itemForm.location" type="text" placeholder="Ex: Salle 101, Armoire A3..."
+                    class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition">
+                </div>
+
+              </div>
+            </div>
+
+            <div class="px-6 py-4 border-t border-white/10 flex justify-end gap-3 bg-black/20">
+              <button @click="isCreateModalOpen = false"
+                class="px-6 py-2.5 rounded-full font-semibold text-gray-400 hover:text-white hover:bg-white/5 transition">
+                Annuler
+              </button>
+              <button @click="submitItem" :disabled="isSubmitting"
+                class="px-6 py-2.5 rounded-full font-bold bg-white hover:bg-gray-200 text-black transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+                <span v-if="isSubmitting"
+                  class="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin"></span>
+                Ajouter l'équipement
+              </button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue';
-import { FastAverageColor } from 'fast-average-color';
-import GlassSurface from '~/components/ui/GlassSurface.vue';
+import { useAuth } from '~/composables/useAuth';
+import FileUpload from '~/components/ui/FileUpload.vue';
+
+const { token } = useAuth();
 
 interface InventoryItem {
   id: string;
@@ -188,39 +278,78 @@ interface ApiResponse {
   };
 }
 
+// Decode JWT to get role (client-side, no secret needed for UI gating)
+const getRoleFromToken = (t: string | null): string | null => {
+  if (!t) return null;
+  try {
+    const part = t.split('.')[1];
+    if (!part) return null;
+    const payload = JSON.parse(atob(part.replace(/-/g, '+').replace(/_/g, '/')));
+    return payload.roleSlug ?? null;
+  } catch {
+    return null;
+  }
+};
+
+const canManageInventory = computed(() =>
+  ['rp', 'admin'].includes(getRoleFromToken(token.value) ?? '')
+);
+
 // State
 const page = ref(1);
 const limit = ref(9);
 const search = ref('');
 const selectedCategory = ref('');
 
-// Dominant Color State
-const imageColors = ref<Record<string, string>>({});
-const fac = new FastAverageColor();
+// Modal state
+const isCreateModalOpen = ref(false);
+const isSubmitting = ref(false);
+const itemImage = ref<File | null>(null);
+const itemForm = ref({
+  name: '',
+  description: '',
+  category: '',
+  quantity: 0,
+  quantityAvailable: undefined as number | undefined,
+  location: ''
+});
 
-const extractColor = async (event: Event, id: string) => {
-  if (imageColors.value[id]) return;
-  const imgElement = event.target as HTMLImageElement;
+const submitItem = async () => {
+  if (!itemForm.value.name || itemForm.value.quantity == null) {
+    alert('Veuillez remplir tous les champs obligatoires.');
+    return;
+  }
+
+  isSubmitting.value = true;
   try {
-    const color = await fac.getColorAsync(imgElement);
-    // Darken or saturate the color slightly if needed, or just use the hex
-    imageColors.value[id] = color.hex;
-  } catch (e) {
-    console.error("Failed to extract color for", id, e);
-    imageColors.value[id] = 'rgba(255,255,255,0.2)'; // Fallback faint white glow
-  }
-};
+    const formData = new FormData();
+    formData.append('name', itemForm.value.name);
+    formData.append('quantity', String(itemForm.value.quantity));
+    if (itemForm.value.description) formData.append('description', itemForm.value.description);
+    if (itemForm.value.category) formData.append('category', itemForm.value.category);
+    if (itemForm.value.quantityAvailable !== undefined) formData.append('quantityAvailable', String(itemForm.value.quantityAvailable));
+    if (itemForm.value.location) formData.append('location', itemForm.value.location);
+    if (itemImage.value) formData.append('image', itemImage.value);
 
-const setDefaultColor = (id: string, color: string) => {
-  if (!imageColors.value[id]) {
-    imageColors.value[id] = color;
-  }
-}
+    const res = await $fetch<{ success: boolean }>('/api/inventory', {
+      method: 'POST',
+      body: formData,
+      headers: token.value ? { Authorization: `Bearer ${token.value}` } : {}
+    });
 
-const getCardStyle = (id: string) => {
-  return {
-    '--card-glow': imageColors.value[id] || 'transparent'
-  };
+    if (res.success) {
+      isCreateModalOpen.value = false;
+      itemForm.value = { name: '', description: '', category: '', quantity: 0, quantityAvailable: undefined, location: '' };
+      itemImage.value = null;
+      await refresh();
+    }
+  } catch (e: any) {
+    console.error('Erreur de création:', e);
+    const msg = e.data?.data?.[0]?.message || e.data?.statusMessage || "Erreur lors de la création de l'équipement.";
+    alert('Erreur: ' + msg);
+  } finally {
+    isSubmitting.value = false;
+  }
 };
 
 // Debounce search update
@@ -231,12 +360,12 @@ watch(search, (newVal) => {
   clearTimeout(searchTimeout);
   searchTimeout = setTimeout(() => {
     debouncedSearch.value = newVal;
-    page.value = 1; // Reset to first page on search
+    page.value = 1;
   }, 300);
 });
 
 watch(selectedCategory, () => {
-  page.value = 1; // Reset to first page on category change
+  page.value = 1;
 });
 
 // Fetch data
@@ -255,5 +384,44 @@ const pagination = computed(() => data.value?.data?.pagination || {
   page: 1, limit: 9, total: 0, totalPages: 0, hasNext: false, hasPrev: false
 });
 const categories = computed(() => data.value?.data?.filters?.categories?.map(c => c.name) || []);
-
 </script>
+
+<style scoped>
+.modal-enter-active,
+.modal-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.modal-enter-from,
+.modal-leave-to {
+  opacity: 0;
+}
+
+.modal-enter-active .rounded-\[24px\],
+.modal-leave-active .rounded-\[24px\] {
+  transition: transform 0.3s ease;
+}
+
+.modal-enter-from .rounded-\[24px\],
+.modal-leave-to .rounded-\[24px\] {
+  transform: scale(0.95);
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+</style>

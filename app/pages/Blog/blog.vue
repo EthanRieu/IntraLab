@@ -8,7 +8,10 @@
       <div class="flex flex-row gap-4 items-center">
         <!-- Create Article Button -->
         <button v-if="isAuthenticated" @click="isCreateModalOpen = true"
-          class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-full font-bold transition whitespace-nowrap shadow-lg shadow-blue-500/20">
+          class="px-5 py-2.5 bg-white text-black font-extrabold uppercase text-[11px] tracking-[0.15em] rounded-full hover:bg-gray-200 hover:scale-105 active:scale-95 transition-all shadow-[0_0_20px_rgba(255,255,255,0.15)] flex items-center shrink-0">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+          </svg>
           Créer un article
         </button>
 
@@ -61,52 +64,54 @@
     </div>
 
     <!-- Articles Grid -->
-    <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-8 justify-items-center">
+    <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       <NuxtLink v-for="article in articles" :key="article.id" :to="'/Blog/' + article.id"
-        class="group relative h-[383px] w-full max-w-[800px] rounded-[30px] overflow-hidden hover:scale-[1.02] transition-transform duration-300 shadow-cyan-500/20 block cursor-pointer">
+        class="group relative rounded-[24px] overflow-hidden border border-white/8 hover:border-white/20 transition-all duration-300 hover:scale-[1.02] block cursor-pointer"
+        style="background: rgba(255,255,255,0.03);">
 
-        <!-- Background Image -->
-        <img v-if="article.images && article.images.length > 0" :src="article.images[0]" :alt="article.title"
-          class="absolute inset-0 w-full h-full object-cover scale-110 transition-transform duration-700 group-hover:scale-120" />
-
-        <!-- Fallback if no image -->
-        <div v-else
-          class="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-white/20" fill="none" viewBox="0 0 24 24"
-            stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1"
-              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-          </svg>
+        <!-- Cover Image -->
+        <div class="relative h-48 overflow-hidden">
+          <img v-if="article.images && article.images.length > 0" :src="article.images[0]" :alt="article.title"
+            class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+          <div v-else
+            class="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-800/60 to-gray-900/60">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-white/10" fill="none" viewBox="0 0 24 24"
+              stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1"
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+          </div>
+          <!-- Category badge overlay -->
+          <div class="absolute top-3 left-3">
+            <span class="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-black/50 backdrop-blur-sm text-white/80 border border-white/10">
+              {{ article.category }}
+            </span>
+          </div>
         </div>
 
-        <!-- Glass Overlay at bottom -->
-        <div class="absolute bottom-2 left-2 right-2 h-auto">
-          <GlassSurface :border-radius="20" :opacity="0.53" :border-width="0.07" :brightness="50" :blur="11"
-            :displace="0.5" :distortion-scale="0.5" :red-offset="0" :green-offset="0" :blue-offset="0"
-            :background-opacity="0.1" mix-blend-mode="normal" width="100%" height="auto" class="overflow-hidden">
-            <div class="p-4 w-full flex flex-col gap-1">
-              <div class="flex justify-between items-start">
-                <h2
-                  class="text-lg font-bold text-white leading-tight line-clamp-2 pr-4 group-hover:text-blue-300 transition-colors">
-                  {{ article.title }}
-                </h2>
-                <span class="text-xs font-mono text-gray-300 whitespace-nowrap pt-1">
-                  {{ formatDate(article.publishedAt) }}
-                </span>
-              </div>
+        <!-- Content -->
+        <div class="p-5">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="text-[11px] text-gray-500 font-mono">{{ formatDate(article.publishedAt) }}</span>
+            <span v-if="article.author" class="text-gray-700">·</span>
+            <span v-if="article.author" class="text-[11px] text-gray-500 truncate">
+              {{ article.author.firstName }} {{ article.author.lastName }}
+            </span>
+          </div>
 
-              <div class="flex justify-between items-end mt-2">
-                <p class="text-gray-300 text-sm line-clamp-1 w-5/6">
-                  {{ article.content }}
-                </p>
-                <svg xmlns="http://www.w3.org/2000/svg"
-                  class="h-5 w-5 text-white/50 group-hover:text-white transition-colors" fill="none" viewBox="0 0 24 24"
-                  stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                </svg>
-              </div>
-            </div>
-          </GlassSurface>
+          <h2 class="text-base font-bold text-white leading-snug line-clamp-2 group-hover:text-blue-300 transition-colors mb-2">
+            {{ article.title }}
+          </h2>
+          <p class="text-sm text-gray-500 line-clamp-2 leading-relaxed">{{ article.content }}</p>
+
+          <div class="flex items-center justify-end mt-4 pt-3 border-t border-white/5">
+            <span class="text-xs text-gray-600 group-hover:text-white transition-colors flex items-center gap-1">
+              Lire l'article
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+              </svg>
+            </span>
+          </div>
         </div>
       </NuxtLink>
     </div>
@@ -202,7 +207,6 @@
 </template>
 
 <script setup lang="ts">
-import GlassSurface from '~/components/ui/GlassSurface.vue';
 import FileUpload from '~/components/ui/FileUpload.vue';
 import { useAuth } from '~/composables/useAuth';
 

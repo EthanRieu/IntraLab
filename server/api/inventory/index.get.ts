@@ -130,6 +130,7 @@ async function getAllItems(event: H3Event) {
     quantityAvailable: item.quantity_available,
     location: item.location,
     active: item.active,
+    imageUrl: item.image_url,
     createdAt: item.created_at,
     updatedAt: item.updated_at,
     stats: {

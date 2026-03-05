@@ -86,7 +86,7 @@
                             @click="toggleReaction(msg.id, reaction.emoji)">
                             <span>{{ reaction.emoji }}</span>
                             <span class="text-[10px] text-gray-400" v-if="reaction.count > 1">{{ reaction.count
-                                }}</span>
+                            }}</span>
                         </div>
                     </div>
 
@@ -304,76 +304,70 @@ const addEmojiToInput = (emoji: string) => {
 };
 
 const {
-    connect, disconnect, joinRoom, leaveRoom, sendMessage, editMessage, deleteMessage, addReaction, markRead, startTyping, stopTyping,
-    onMessage, onMessageEdited, onMessageDeleted, onTypingStart, onTypingStop, onReactionAdded
+    connect, joinRoom, leaveRoom, sendMessage, editMessage, deleteMessage, addReaction, markRead, startTyping, stopTyping, on
 } = useChat();
 
 const toggleReaction = (messageId: string, emoji: string) => {
     addReaction(messageId, emoji);
 };
 
+const unsubscribers: (() => void)[] = [];
+
 onMounted(() => {
     scrollToBottom();
 
-    // Connect WebSocket
+    // Connect WebSocket (singleton — safe to call multiple times)
     const token = useCookie('auth_token').value;
     if (token) {
         connect(token as string);
-        setTimeout(() => joinRoom(sessionId), 500); // small delay to ensure WS is open
+        setTimeout(() => joinRoom(sessionId), 500);
     }
 
     // Bind WS Events
-    onMessage.value = (msg: Message) => {
+    unsubscribers.push(on('new_message', (data: any) => {
+        const msg: Message = data.message;
         if (msg.sessionId !== sessionId) return;
-
-        // Prevent duplicates
         if (!messages.value.some(m => m.id === msg.id)) {
             messages.value.push(msg);
             markRead();
             scrollToBottom();
         }
-    };
+    }));
 
-    onMessageEdited.value = (data: any) => {
+    unsubscribers.push(on('message_edited', (data: any) => {
         const msg = messages.value.find(m => m.id === data.messageId);
-        if (msg) {
-            msg.content = data.content;
-            msg.isEdited = true;
-        }
-    };
+        if (msg) { msg.content = data.content; msg.isEdited = true; }
+    }));
 
-    onMessageDeleted.value = (data: any) => {
+    unsubscribers.push(on('message_deleted', (data: any) => {
         const msg = messages.value.find(m => m.id === data.messageId);
-        if (msg) {
-            msg.content = "Ce message a été supprimé.";
-            msg.isDeleted = true;
-        }
-    };
+        if (msg) { msg.content = 'Ce message a été supprimé.'; msg.isDeleted = true; }
+    }));
 
-    onTypingStart.value = (data: any) => {
+    unsubscribers.push(on('typing_start', (data: any) => {
         if (data.userId !== currentUserId.value) {
             typingUser.value = true;
             clearTimeout(typingTimeout);
             typingTimeout = setTimeout(() => typingUser.value = false, 5000);
         }
-    };
+    }));
 
-    onTypingStop.value = (data: any) => {
+    unsubscribers.push(on('typing_stop', (data: any) => {
         if (data.userId !== currentUserId.value) typingUser.value = false;
-    };
+    }));
 
-    onReactionAdded.value = (data: any) => {
+    unsubscribers.push(on('reaction_added', (data: any) => {
         const msg = messages.value.find(m => m.id === data.messageId);
         if (msg) {
             if (!msg.reactions) msg.reactions = [];
             msg.reactions.push(data.reaction);
         }
-    };
+    }));
 });
 
 onUnmounted(() => {
     leaveRoom(sessionId);
-    disconnect();
+    unsubscribers.forEach(unsub => unsub());
 });
 
 const scrollToBottom = async () => {

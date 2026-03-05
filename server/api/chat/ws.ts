@@ -1,6 +1,7 @@
 import { verifyToken } from '../../utils/auth';
-import { encryptMessage, decryptMessage } from '../../utils/crypto';
+import { encryptMessage } from '../../utils/crypto';
 import prisma from '../../utils/prisma';
+import { registerPeer, unregisterPeer, broadcastToUser } from '../../utils/wsManager';
 
 export default defineWebSocketHandler({
     open(peer) {
@@ -8,6 +9,7 @@ export default defineWebSocketHandler({
     },
 
     close(peer) {
+        unregisterPeer(peer.id);
         console.log('[WS] Connection closed:', peer.id);
     },
 
@@ -34,6 +36,10 @@ export default defineWebSocketHandler({
             }
 
             switch (type) {
+                case 'authenticate':
+                    registerPeer(user.userId, peer);
+                    break;
+
                 case 'join_room':
                     if (sessionId) {
                         peer.subscribe(sessionId);
@@ -92,6 +98,14 @@ export default defineWebSocketHandler({
 
                         peer.publish(sessionId, JSON.stringify(broadcastPayload));
                         peer.send(JSON.stringify(broadcastPayload)); // crossws publish doesn't send to self by default
+
+                        // 5. Notify recipients not in the room (for header unread badge)
+                        const recipients = await prisma.chat_participant.findMany({
+                            where: { session_id: sessionId, user_id: { not: user.userId } }
+                        });
+                        for (const recipient of recipients) {
+                            broadcastToUser(recipient.user_id, { type: 'unread_message', sessionId });
+                        }
                     }
                     break;
 

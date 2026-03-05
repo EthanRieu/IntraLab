@@ -122,6 +122,7 @@ async function getItemById(itemId: string) {
     quantity: item.quantity,
     quantityAvailable: item.quantity_available,
     location: item.location,
+    imageUrl: item.image_url,
     active: item.active,
     createdAt: item.created_at,
     updatedAt: item.updated_at,

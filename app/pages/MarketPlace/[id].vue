@@ -138,15 +138,6 @@
               </div>
 
               <!-- Chat Button -->
-
-              <!-- DEBUG BLOCK: Temp display of IDs -->
-              <div class="text-xs text-red-400 mt-2 p-2 bg-black/50 rounded">
-                DEBUG:<br />
-                User ID: {{ currentUserId }}<br />
-                Seller ID: {{ listing?.seller?.id }}<br />
-                Match? {{ String(listing?.seller?.id) === String(currentUserId) }}
-              </div>
-
               <ClientOnly>
                 <div class="mt-4"
                   v-if="currentUserId && listing?.seller?.id && String(listing.seller.id) !== String(currentUserId)">

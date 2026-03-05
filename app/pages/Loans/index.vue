@@ -56,8 +56,8 @@
 
     <!-- Items Grid -->
     <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12 justify-items-center mt-12">
-      <div v-for="item in items" :key="item.id"
-        class="group relative h-[383px] w-full max-w-[320px] rounded-[30px] overflow-hidden hover:scale-[1.02] transition-all duration-300"
+      <NuxtLink v-for="item in items" :key="item.id" :to="'/Loans/' + item.id"
+        class="block group relative h-[383px] w-full max-w-[320px] rounded-[30px] overflow-hidden hover:scale-[1.02] transition-all duration-300 shadow-cyan-500/10 cursor-pointer"
         :style="getCardStyle(item.id)">
 
         <!-- Glow Behind Effect -->
@@ -124,7 +124,7 @@
             </div>
           </GlassSurface>
         </div>
-      </div>
+      </NuxtLink>
     </div>
 
     <!-- Pagination -->

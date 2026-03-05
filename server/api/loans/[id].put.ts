@@ -6,6 +6,7 @@ import {
   createNotification,
   loanNotifications,
 } from '../../utils/notifications';
+import { sendAutomatedChatMessage } from '../../utils/chat';
 // import { updateQuantity } from './inventory/[id].put';
 
 // Schéma de validation pour la mise à jour d'emprunt
@@ -219,9 +220,24 @@ async function approveLoan(
       relatedId: loanId,
       relatedType: 'loan',
     });
+
+    // Send an automated chat message
+    const formatDate = (date: Date) => date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+    const startDate = new Date();
+
+    // Attempt to extract the date limit from `expectedReturnDate` which was stored in `date_retour_prevue` during request phase
+    const userLoan = existingLoan.user_loan[0];
+    const expectedReturnDateText = userLoan?.date_retour_prevue
+      ? formatDate(new Date(userLoan.date_retour_prevue))
+      : 'une date indéterminée';
+
+    const messageContent = `Salut ${existingLoan.users.first_name}, bonne nouvelle ! Ta demande d'emprunt pour "${existingLoan.inventory.item_name}" a été **approuvée**. N'oublie pas de rendre le matériel avant le ${expectedReturnDateText}. Merci !`;
+
+    await sendAutomatedChatMessage(approverId, existingLoan.borrower_id, messageContent);
+
   } catch (notificationError) {
     console.error(
-      "Erreur lors de l'envoi de la notification:",
+      "Erreur lors de l'envoi de la notification / message chat:",
       notificationError,
     );
   }
@@ -308,9 +324,14 @@ async function rejectLoan(
       relatedId: loanId,
       relatedType: 'loan',
     });
+
+    // Send an automated chat message for rejection
+    const messageContent = `Bonjour ${existingLoan.users.first_name}, au sujet de ta demande pour "${existingLoan.inventory.item_name}", celle-ci a été refusée.\n\n**Motif** : ${rejectionReason}`;
+    await sendAutomatedChatMessage(rejectorId, existingLoan.borrower_id, messageContent);
+
   } catch (notificationError) {
     console.error(
-      "Erreur lors de l'envoi de la notification:",
+      "Erreur lors de l'envoi de la notification ou du message de chat:",
       notificationError,
     );
   }
@@ -461,10 +482,10 @@ async function getLoanById(loanId: string) {
     updatedAt: loan.updated_at,
     approvedBy: userLoan?.users_user_loan_approved_byTousers
       ? {
-          id: userLoan.users_user_loan_approved_byTousers.id,
-          firstName: userLoan.users_user_loan_approved_byTousers.first_name,
-          lastName: userLoan.users_user_loan_approved_byTousers.last_name,
-        }
+        id: userLoan.users_user_loan_approved_byTousers.id,
+        firstName: userLoan.users_user_loan_approved_byTousers.first_name,
+        lastName: userLoan.users_user_loan_approved_byTousers.last_name,
+      }
       : null,
     loanDate: userLoan?.date_emprunt,
     expectedReturnDate: userLoan?.date_retour_prevue,

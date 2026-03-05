@@ -23,12 +23,12 @@ const createLoanRequestSchema = z.object({
       (date) => {
         const now = new Date();
         const maxDate = new Date();
-        maxDate.setMonth(maxDate.getMonth() + 3); // Maximum 3 mois
-        return date > now && date <= maxDate;
+        maxDate.setMonth(maxDate.getMonth() + 9); // Maximum 9 mois
+        return date >= now && date <= maxDate;
       },
       {
         message:
-          "La date de retour prévue doit être entre aujourd'hui et dans 3 mois",
+          "La date de retour prévue doit être aujourd'hui ou dans les 9 prochains mois",
       },
     ),
 });

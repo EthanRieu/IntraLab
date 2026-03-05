@@ -107,7 +107,7 @@
                 </div>
                 <div class="break-words w-full">
                   <div class="font-bold text-lg leading-tight">{{ listing.seller.firstName }} {{ listing.seller.lastName
-                  }}</div>
+                    }}</div>
                   <div v-if="listing.seller.className" class="text-sm text-gray-400">{{ listing.seller.className }}
                     (Niveau {{ listing.seller.classLevel }})</div>
                 </div>
@@ -136,6 +136,37 @@
                   <span>{{ listing.seller.phone }}</span>
                 </a>
               </div>
+
+              <!-- Chat Button -->
+
+              <!-- DEBUG BLOCK: Temp display of IDs -->
+              <div class="text-xs text-red-400 mt-2 p-2 bg-black/50 rounded">
+                DEBUG:<br />
+                User ID: {{ currentUserId }}<br />
+                Seller ID: {{ listing?.seller?.id }}<br />
+                Match? {{ String(listing?.seller?.id) === String(currentUserId) }}
+              </div>
+
+              <ClientOnly>
+                <div class="mt-4"
+                  v-if="currentUserId && listing?.seller?.id && String(listing.seller.id) !== String(currentUserId)">
+                  <button @click="startChat(listing.seller.id)" :disabled="isStartingChat"
+                    class="w-full flex items-center justify-center gap-2 py-3 px-4 bg-indigo-600 hover:bg-indigo-500 text-white font-medium rounded-xl transition-colors shadow-[0_0_15px_rgba(79,70,229,0.3)] disabled:opacity-50">
+                    <div v-if="isStartingChat"
+                      class="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white">
+                    </div>
+                    <template v-else>
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                      </svg>
+                      Contacter via la messagerie
+                    </template>
+                  </button>
+                </div>
+              </ClientOnly>
+
             </div>
           </div>
         </GlassSurface>
@@ -217,6 +248,45 @@ const extractColor = async (event: Event) => {
   } catch (e) {
     console.error("Failed to extract color", e);
     imageColor.value = 'rgba(255,255,255,0.2)';
+  }
+};
+
+const authToken = useCookie<string>('auth_token');
+const currentUserId = computed(() => {
+  if (!authToken.value) return null;
+  try {
+    const payload = authToken.value.split('.')[1];
+    if (!payload) return null;
+    const decoded = JSON.parse(atob(payload));
+    return decoded.userId;
+  } catch (e) {
+    return null;
+  }
+});
+const isStartingChat = ref(false);
+
+const startChat = async (sellerId: string) => {
+  if (isStartingChat.value) return;
+  isStartingChat.value = true;
+
+  try {
+    const { data: response } = await useFetch('/api/chat/start', {
+      method: 'POST',
+      body: { targetUserId: sellerId }
+    });
+
+    if (response.value?.success && response.value?.data?.sessionId) {
+      const router = useRouter();
+      const message = `Bonjour, je suis intéressé(e) par votre annonce "${listing.value?.item?.name}".`;
+      router.push(`/Messages/${response.value.data.sessionId}?msg=${encodeURIComponent(message)}`);
+    } else {
+      alert("Une erreur est survenue lors de la création de la discussion.");
+    }
+  } catch (e) {
+    console.error(e);
+    alert("Impossible de contacter le vendeur pour le moment.");
+  } finally {
+    isStartingChat.value = false;
   }
 };
 </script>

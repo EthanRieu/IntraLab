@@ -1,5 +1,5 @@
 import prisma from '../../utils/prisma';
-import { requireAuth, handleAuthError } from '../../middleware/auth';
+import { handleAuthError } from '../../middleware/auth';
 import { validateUUID } from '../../utils/validation';
 
 export default defineEventHandler(async (event) => {
@@ -14,8 +14,6 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    // Vérifier l'authentification
-    await requireAuth(event);
 
     // Récupérer l'item par ID
     const item = await getItemById(itemId);
@@ -103,10 +101,10 @@ async function getItemById(itemId: string) {
       createdAt: loan.created_at,
       approvedBy: userLoan?.users_user_loan_approved_byTousers
         ? {
-            id: userLoan.users_user_loan_approved_byTousers.id,
-            firstName: userLoan.users_user_loan_approved_byTousers.first_name,
-            lastName: userLoan.users_user_loan_approved_byTousers.last_name,
-          }
+          id: userLoan.users_user_loan_approved_byTousers.id,
+          firstName: userLoan.users_user_loan_approved_byTousers.first_name,
+          lastName: userLoan.users_user_loan_approved_byTousers.last_name,
+        }
         : null,
       loanDate: userLoan?.date_emprunt,
       expectedReturnDate: userLoan?.date_retour_prevue,
@@ -132,8 +130,8 @@ async function getItemById(itemId: string) {
     utilizationRate:
       item.quantity > 0
         ? Math.round(
-            ((item.quantity - item.quantity_available) / item.quantity) * 100,
-          )
+          ((item.quantity - item.quantity_available) / item.quantity) * 100,
+        )
         : 0,
   };
 }

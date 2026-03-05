@@ -18,5 +18,10 @@ export default defineNuxtConfig({
   typescript: {
     typeCheck: false,
   },
+  nitro: {
+    experimental: {
+      websocket: true
+    }
+  }
 });
 

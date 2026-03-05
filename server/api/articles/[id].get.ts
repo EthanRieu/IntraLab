@@ -27,7 +27,7 @@ export default defineEventHandler(async (event) => {
   } catch (error) {
     console.error("Erreur lors de la récupération de l'article:", error);
 
-    if (error.statusCode) {
+    if ((error as any).statusCode) {
       throw error;
     }
 
@@ -112,40 +112,41 @@ async function getArticleById(articleId: string, user: any) {
     publishedAt: article.published_at,
     author: userArticle
       ? {
-          id: userArticle.users_user_article_user_idTousers.id,
-          firstName: userArticle.users_user_article_user_idTousers.first_name,
-          lastName: userArticle.users_user_article_user_idTousers.last_name,
-          email: userArticle.users_user_article_user_idTousers.email,
-          class: userArticle.users_user_article_user_idTousers.classes
-            ? {
-                slug: userArticle.users_user_article_user_idTousers.classes
-                  .slug,
-                name: userArticle.users_user_article_user_idTousers.classes
-                  .name,
-                level:
-                  userArticle.users_user_article_user_idTousers.classes.level,
-              }
-            : null,
-          specialization: userArticle.users_user_article_user_idTousers.spec
-            ? {
-                slug: userArticle.users_user_article_user_idTousers.spec.slug,
-                name: userArticle.users_user_article_user_idTousers.spec.name,
-              }
-            : null,
-        }
+        id: userArticle.users_user_article_user_idTousers.id,
+        firstName: userArticle.users_user_article_user_idTousers.first_name,
+        lastName: userArticle.users_user_article_user_idTousers.last_name,
+        email: userArticle.users_user_article_user_idTousers.email,
+        class: userArticle.users_user_article_user_idTousers.classes
+          ? {
+            slug: userArticle.users_user_article_user_idTousers.classes
+              .slug,
+            name: userArticle.users_user_article_user_idTousers.classes
+              .name,
+            level:
+              userArticle.users_user_article_user_idTousers.classes.level,
+          }
+          : null,
+        specialization: userArticle.users_user_article_user_idTousers.spec
+          ? {
+            slug: userArticle.users_user_article_user_idTousers.spec.slug,
+            name: userArticle.users_user_article_user_idTousers.spec.name,
+          }
+          : null,
+      }
       : null,
     validatedBy: userArticle?.users_user_article_validated_byTousers
       ? {
-          id: userArticle.users_user_article_validated_byTousers.id,
-          firstName:
-            userArticle.users_user_article_validated_byTousers.first_name,
-          lastName:
-            userArticle.users_user_article_validated_byTousers.last_name,
-        }
+        id: userArticle.users_user_article_validated_byTousers.id,
+        firstName:
+          userArticle.users_user_article_validated_byTousers.first_name,
+        lastName:
+          userArticle.users_user_article_validated_byTousers.last_name,
+      }
       : null,
     validatedAt: userArticle?.validated_at,
     linkTo: userArticle?.link_to,
     hasImage: !!userArticle?.img,
+    images: article.images,
   };
 }
 

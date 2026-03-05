@@ -7,8 +7,10 @@ export type NotificationType =
   | 'loan_overdue'
   | 'loan_reminder'
   | 'loan_return_processed'
+  | 'loan_request'
   | 'article_published'
   | 'article_rejected'
+  | 'article_pending'
   | 'store_purchase'
   | 'user_validation'
   | 'system_announcement';
@@ -80,9 +82,8 @@ export const loanNotifications = {
   rejected: (borrowerName: string, itemName: string, reason?: string) => ({
     type: 'loan_rejected' as NotificationType,
     title: 'Emprunt rejeté',
-    message: `Votre demande d'emprunt pour "${itemName}" a été rejetée.${
-      reason ? ` Raison: ${reason}` : ''
-    }`,
+    message: `Votre demande d'emprunt pour "${itemName}" a été rejetée.${reason ? ` Raison: ${reason}` : ''
+      }`,
   }),
 
   overdue: (borrowerName: string, itemName: string, daysOverdue: number) => ({
@@ -109,9 +110,8 @@ export const articleNotifications = {
   rejected: (authorName: string, articleTitle: string, reason?: string) => ({
     type: 'article_rejected' as NotificationType,
     title: 'Article rejeté',
-    message: `Votre article "${articleTitle}" a été rejeté.${
-      reason ? ` Raison: ${reason}` : ''
-    }`,
+    message: `Votre article "${articleTitle}" a été rejeté.${reason ? ` Raison: ${reason}` : ''
+      }`,
   }),
 };
 

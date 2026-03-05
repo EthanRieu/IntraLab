@@ -197,34 +197,95 @@ model user_loan {
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model users {
-  id                                            String          @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  first_name                                    String          @db.VarChar(64)
-  last_name                                     String          @db.VarChar(64)
-  email                                         String          @unique @db.VarChar(255)
-  phone                                         String?         @db.VarChar(64)
-  password                                      String?         @db.VarChar(255)
-  role_id                                       String          @db.Uuid
-  class_id                                      String?         @db.Uuid
-  spec_id                                       String?         @db.Uuid
-  active                                        Boolean?        @default(true)
-  deleted                                       Boolean?        @default(false)
-  created_at                                    DateTime?       @default(now()) @db.Timestamptz(6)
-  updated_at                                    DateTime?       @default(now()) @db.Timestamptz(6)
+  id                                            String             @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  first_name                                    String             @db.VarChar(64)
+  last_name                                     String             @db.VarChar(64)
+  email                                         String             @unique @db.VarChar(255)
+  phone                                         String?            @db.VarChar(64)
+  password                                      String?            @db.VarChar(255)
+  role_id                                       String             @db.Uuid
+  class_id                                      String?            @db.Uuid
+  spec_id                                       String?            @db.Uuid
+  active                                        Boolean?           @default(true)
+  deleted                                       Boolean?           @default(false)
+  created_at                                    DateTime?          @default(now()) @db.Timestamptz(6)
+  updated_at                                    DateTime?          @default(now()) @db.Timestamptz(6)
   loan                                          loan[]
   notifications                                 notifications[]
-  store_store_buyer_idTousers                   store[]         @relation("store_buyer_idTousers")
-  store_store_seller_idTousers                  store[]         @relation("store_seller_idTousers")
-  user_article_user_article_user_idTousers      user_article[]  @relation("user_article_user_idTousers")
-  user_article_user_article_validated_byTousers user_article[]  @relation("user_article_validated_byTousers")
-  user_loan_user_loan_approved_byTousers        user_loan[]     @relation("user_loan_approved_byTousers")
-  user_loan_user_loan_user_idTousers            user_loan[]     @relation("user_loan_user_idTousers")
-  classes                                       classes?        @relation(fields: [class_id], references: [id], onUpdate: NoAction)
-  roles                                         roles           @relation(fields: [role_id], references: [id], onUpdate: NoAction)
-  spec                                          spec?           @relation(fields: [spec_id], references: [id], onUpdate: NoAction)
+  store_store_buyer_idTousers                   store[]            @relation("store_buyer_idTousers")
+  store_store_seller_idTousers                  store[]            @relation("store_seller_idTousers")
+  user_article_user_article_user_idTousers      user_article[]     @relation("user_article_user_idTousers")
+  user_article_user_article_validated_byTousers user_article[]     @relation("user_article_validated_byTousers")
+  user_loan_user_loan_approved_byTousers        user_loan[]        @relation("user_loan_approved_byTousers")
+  user_loan_user_loan_user_idTousers            user_loan[]        @relation("user_loan_user_idTousers")
+  classes                                       classes?           @relation(fields: [class_id], references: [id], onUpdate: NoAction)
+  roles                                         roles              @relation(fields: [role_id], references: [id], onUpdate: NoAction)
+  spec                                          spec?              @relation(fields: [spec_id], references: [id], onUpdate: NoAction)
+  chat_participant                              chat_participant[]
+  chat_message                                  chat_message[]
+  chat_reaction                                 chat_reaction[]
 
   @@index([active, deleted], map: "idx_users_active")
   @@index([class_id], map: "idx_users_class")
   @@index([email], map: "idx_users_email")
   @@index([role_id], map: "idx_users_role")
   @@index([spec_id], map: "idx_users_spec")
+}
+
+model chat_session {
+  id         String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  updated_at DateTime @default(now()) @db.Timestamptz(6)
+
+  participants chat_participant[]
+  messages     chat_message[]
+}
+
+model chat_participant {
+  session_id     String   @db.Uuid
+  user_id        String   @db.Uuid
+  last_read_time DateTime @default(now()) @db.Timestamptz(6)
+  joined_at      DateTime @default(now()) @db.Timestamptz(6)
+
+  session chat_session @relation(fields: [session_id], references: [id], onDelete: Cascade)
+  user    users        @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@id([session_id, user_id])
+}
+
+model chat_message {
+  id          String  @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  session_id  String  @db.Uuid
+  sender_id   String  @db.Uuid
+  reply_to_id String? @db.Uuid
+
+  content String
+  iv      String @db.VarChar(255)
+
+  is_edited  Boolean @default(false)
+  is_deleted Boolean @default(false)
+
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  updated_at DateTime @default(now()) @db.Timestamptz(6)
+
+  session   chat_session    @relation(fields: [session_id], references: [id], onDelete: Cascade)
+  sender    users           @relation(fields: [sender_id], references: [id], onDelete: Cascade)
+  parent    chat_message?   @relation("MessageReplies", fields: [reply_to_id], references: [id], onDelete: SetNull)
+  replies   chat_message[]  @relation("MessageReplies")
+  reactions chat_reaction[]
+
+  @@index([session_id, created_at])
+}
+
+model chat_reaction {
+  id         String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  message_id String   @db.Uuid
+  user_id    String   @db.Uuid
+  emoji      String   @db.VarChar(50)
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+
+  message chat_message @relation(fields: [message_id], references: [id], onDelete: Cascade)
+  user    users        @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([message_id, user_id, emoji])
 }

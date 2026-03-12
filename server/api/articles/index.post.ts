@@ -1,3 +1,6 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import prisma from '../../utils/prisma';
 import { requireAuth, handleAuthError } from '../../middleware/auth';
@@ -35,8 +38,30 @@ export default defineEventHandler(async (event) => {
     // Vérifier l'authentification
     const user = await requireAuth(event);
 
-    // Récupérer et valider les données
-    const body = await readBody(event);
+    // Récupérer les données sous forme de Multipart (fichiers + champs textuels)
+    const formData = await readMultipartFormData(event);
+    if (!formData) {
+      throw createError({ statusCode: 400, statusMessage: 'Données manquantes ou format incorrect' });
+    }
+
+    let fileData: Buffer | null = null;
+    let fileName = '';
+    const body: Record<string, string> = {};
+
+    // Parcourir les éléments du formData
+    for (const item of formData) {
+      if (item.name === 'image' && item.filename) {
+        // C'est notre image
+        fileData = item.data;
+        const ext = path.extname(item.filename) || '.png';
+        fileName = `${randomUUID()}${ext}`; // Nom de fichier unique
+      } else if (item.name) {
+        // C'est un champ texte
+        body[item.name] = item.data.toString();
+      }
+    }
+
+    // Valider les champs textuels avec zod
     const articleData = createArticleSchema.parse(body);
 
     // Valider le statut si fourni
@@ -47,8 +72,25 @@ export default defineEventHandler(async (event) => {
       });
     }
 
+    let imageUrl = '';
+
+    // Sauvegarder l'image localement si elle existe
+    if (fileData) {
+      const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'articles');
+      // S'assurer que le dossier existe
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+      }
+
+      const filePath = path.join(uploadDir, fileName);
+      fs.writeFileSync(filePath, fileData);
+
+      // Chemin accessible depuis le front-end
+      imageUrl = `/uploads/articles/${fileName}`;
+    }
+
     // Créer l'article
-    const article = await createArticle(user.userId, articleData);
+    const article = await createArticle(user.userId, articleData, imageUrl);
 
     return {
       success: true,
@@ -74,6 +116,7 @@ export default defineEventHandler(async (event) => {
 async function createArticle(
   userId: string,
   articleData: z.infer<typeof createArticleSchema>,
+  imageUrl: string
 ) {
   // Utiliser une transaction pour créer l'article et la relation user_article
   const result = await prisma.$transaction(async (tx) => {
@@ -86,6 +129,7 @@ async function createArticle(
           ? sanitizeString(articleData.category)
           : null,
         status: articleData.status,
+        images: imageUrl ? [imageUrl] : [],
       },
     });
 

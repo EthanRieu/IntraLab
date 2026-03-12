@@ -36,7 +36,15 @@ export const requireAuth = async (
   event: H3Event,
 ): Promise<AuthenticatedUser> => {
   const authHeader = getHeader(event, 'authorization');
-  const token = extractTokenFromHeader(authHeader);
+  let token = extractTokenFromHeader(authHeader);
+
+  // SSR fallback: if no Authorization header, try reading the token from cookies
+  // (forwarded by Nuxt's useRequestHeaders(['cookie']))
+  if (!token) {
+    const cookieHeader = getHeader(event, 'cookie') ?? '';
+    const match = cookieHeader.match(/(?:^|;\s*)auth_token=([^;]+)/);
+    if (match?.[1]) token = decodeURIComponent(match[1]);
+  }
 
   if (!token) {
     throw new AuthError(AUTH_ERRORS.TOKEN_INVALID, 401);
@@ -75,15 +83,15 @@ export const requireAuth = async (
       },
       classes: user.classes
         ? {
-            slug: user.classes.slug,
-            name: user.classes.name,
-          }
+          slug: user.classes.slug,
+          name: user.classes.name,
+        }
         : null,
       spec: user.spec
         ? {
-            slug: user.spec.slug,
-            name: user.spec.name,
-          }
+          slug: user.spec.slug,
+          name: user.spec.name,
+        }
         : null,
     },
   };

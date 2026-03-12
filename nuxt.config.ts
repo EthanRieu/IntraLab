@@ -6,11 +6,25 @@ export default defineNuxtConfig({
   css: ['~/assets/css/main.css'],
   vite: {
     plugins: [tailwindcss()],
+    resolve: {
+      alias: {
+        '.prisma/client/index-browser': './node_modules/@prisma/client/index-browser.js',
+      },
+    },
+    server: {
+      allowedHosts: true,
+    },
   },
   modules: [
-    // '@prisma/nuxt' // Temporairement désactivé pour test
+    '@prisma/nuxt'
   ],
   typescript: {
     typeCheck: false,
   },
+  nitro: {
+    experimental: {
+      websocket: true
+    }
+  }
 });
+

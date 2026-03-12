@@ -144,9 +144,9 @@ async function getPendingArticles(event: H3Event) {
           }
         : null,
       linkTo: userArticle?.link_to,
-      hasImage: !!userArticle?.img,
+      images: article.images ?? [],
       waitingDays: Math.floor(
-        (Date.now() - new Date(article.created_at).getTime()) /
+        (Date.now() - new Date(article.created_at ?? Date.now()).getTime()) /
           (1000 * 60 * 60 * 24),
       ),
     };

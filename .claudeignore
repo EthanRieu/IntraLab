@@ -1,0 +1,39 @@
+# Dépendances (Le plus important pour économiser)
+node_modules/
+bower_components/
+.output/
+.env*
+
+# Builds et sorties
+dist/
+build/
+out/
+.next/
+.nuxt/
+
+# Logs et temporaires
+*.log
+logs/
+.tmp/
+.cache/
+
+# Médias et assets lourds (Claude n'en a pas besoin pour coder)
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.svg
+*.mp4
+*.pdf
+*.zip
+
+# Données volumineuses
+*.csv
+*.sql
+# (Sauf si tu veux qu'il analyse un petit fichier de config spécifique)
+
+# Git et IDE
+.git/
+.vscode/
+.idea/
+.antigravity/

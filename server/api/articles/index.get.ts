@@ -89,7 +89,7 @@ async function getPublishedArticles(event: H3Event, user: any) {
   }
 
   // Exécuter les requêtes en parallèle
-  const [articles, total] = await Promise.all([
+  const [allArticles, total] = await Promise.all([
     prisma.articles.findMany({
       where,
       include: {
@@ -113,12 +113,18 @@ async function getPublishedArticles(event: H3Event, user: any) {
           },
         },
       },
-      orderBy: [{ published_at: 'desc' }, { created_at: 'desc' }],
-      skip,
-      take: limit,
     }),
     prisma.articles.count({ where }),
   ]);
+
+  // Trier par COALESCE(published_at, created_at) DESC pour gérer les nulls correctement
+  allArticles.sort((a: any, b: any) => {
+    const dateA = (a.published_at ?? a.created_at)?.getTime() ?? 0;
+    const dateB = (b.published_at ?? b.created_at)?.getTime() ?? 0;
+    return dateB - dateA;
+  });
+
+  const articles = allArticles.slice(skip, skip + limit);
 
   // Formater les données
   const formattedArticles = articles.map((article: any) => {
@@ -136,24 +142,25 @@ async function getPublishedArticles(event: H3Event, user: any) {
       publishedAt: article.published_at,
       author: userArticle
         ? {
-            id: userArticle.users_user_article_user_idTousers.id,
-            firstName: userArticle.users_user_article_user_idTousers.first_name,
-            lastName: userArticle.users_user_article_user_idTousers.last_name,
-            email: userArticle.users_user_article_user_idTousers.email,
-          }
+          id: userArticle.users_user_article_user_idTousers.id,
+          firstName: userArticle.users_user_article_user_idTousers.first_name,
+          lastName: userArticle.users_user_article_user_idTousers.last_name,
+          email: userArticle.users_user_article_user_idTousers.email,
+        }
         : null,
       validatedBy: userArticle?.users_user_article_validated_byTousers
         ? {
-            id: userArticle.users_user_article_validated_byTousers.id,
-            firstName:
-              userArticle.users_user_article_validated_byTousers.first_name,
-            lastName:
-              userArticle.users_user_article_validated_byTousers.last_name,
-          }
+          id: userArticle.users_user_article_validated_byTousers.id,
+          firstName:
+            userArticle.users_user_article_validated_byTousers.first_name,
+          lastName:
+            userArticle.users_user_article_validated_byTousers.last_name,
+        }
         : null,
       validatedAt: userArticle?.validated_at,
       linkTo: userArticle?.link_to,
       hasImage: !!userArticle?.img,
+      images: article.images,
     };
   });
 

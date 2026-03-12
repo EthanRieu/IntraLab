@@ -15,9 +15,7 @@ export default defineNuxtConfig({
       allowedHosts: true,
     },
   },
-  modules: [
-    '@prisma/nuxt'
-  ],
+  modules: [],
   typescript: {
     typeCheck: false,
   },

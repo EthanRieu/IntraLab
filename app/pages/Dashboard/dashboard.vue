@@ -17,20 +17,19 @@
     <template v-else-if="dashboardData">
       <!-- ===== HEADER / PROFILE ===== -->
       <div class="mb-12">
-        <h1 class="text-6xl font-bold text-white uppercase mb-8">DASHBOARD.</h1>
+        <h1 class="text-4xl sm:text-6xl font-bold text-white uppercase mb-8">DASHBOARD.</h1>
 
-        <div class="relative rounded-[28px] overflow-hidden p-6 md:p-8"
-          style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1);">
+        <div class="relative rounded-[28px] overflow-hidden p-6 md:p-8 backdrop-blur-md"
+          style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2);">
           <!-- Subtle gradient accent -->
           <div class="absolute top-0 left-0 w-64 h-64 rounded-full pointer-events-none opacity-20 blur-3xl"
             style="background: radial-gradient(circle, rgba(120,80,255,0.6), transparent 70%);">
           </div>
 
-          <div class="relative flex flex-col md:flex-row items-start md:items-center gap-6">
+          <div class="relative flex flex-col sm:flex-row items-start sm:items-center gap-6">
             <!-- Avatar -->
             <div class="flex-shrink-0">
-              <div class="relative w-20 h-20 rounded-2xl overflow-hidden cursor-pointer group/avatar"
-                style="background: linear-gradient(135deg, rgba(120,80,255,0.5), rgba(60,140,255,0.3));"
+              <div class="relative w-20 h-20 rounded-2xl overflow-hidden cursor-pointer group/avatar bg-[#f8f9fa]"
                 @click="avatarInputRef?.click()"
                 :title="avatarUploading ? 'Upload en cours…' : 'Changer la photo de profil'">
 
@@ -38,7 +37,7 @@
                 <img v-if="avatarUrl" :src="avatarUrl" alt="Avatar"
                   class="absolute inset-0 w-full h-full object-cover" />
                 <span v-else
-                  class="absolute inset-0 flex items-center justify-center text-3xl font-bold text-white/80 select-none">
+                  class="absolute inset-0 flex items-center justify-center text-3xl font-bold bg-custom-gradient bg-clip-text text-transparent select-none">
                   {{ userInitials }}
                 </span>
 
@@ -68,9 +67,49 @@
 
             <!-- Info -->
             <div class="flex-1 min-w-0">
-              <h2 class="text-2xl md:text-3xl font-bold text-white truncate">
-                {{ dashboardData.user.firstName }} {{ dashboardData.user.lastName }}
-              </h2>
+              <!-- Name (inline edit) -->
+              <div class="flex items-center gap-2 group/name">
+                <template v-if="!editingName">
+                  <h2 class="text-2xl md:text-3xl font-bold text-white truncate">
+                    {{ dashboardData.user.firstName }} {{ dashboardData.user.lastName }}
+                  </h2>
+                  <button @click="startEditName"
+                    class="opacity-0 group-hover/name:opacity-100 transition-opacity p-1.5 rounded-lg hover:bg-white/10 text-gray-400 hover:text-white shrink-0"
+                    title="Modifier le nom">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M15.232 5.232l3.536 3.536M9 13l6.293-6.293a1 1 0 011.414 0l1.586 1.586a1 1 0 010 1.414L12 16H9v-3z" />
+                    </svg>
+                  </button>
+                </template>
+                <template v-else>
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <input v-model="nameForm.firstName" placeholder="Prénom"
+                      class="px-3 py-1 rounded-lg bg-white/10 border border-white/20 text-white text-sm focus:outline-none focus:border-white/50 w-32"
+                      @keyup.enter="saveUserName" @keyup.escape="editingName = false" />
+                    <input v-model="nameForm.lastName" placeholder="Nom"
+                      class="px-3 py-1 rounded-lg bg-white/10 border border-white/20 text-white text-sm focus:outline-none focus:border-white/50 w-32"
+                      @keyup.enter="saveUserName" @keyup.escape="editingName = false" />
+                    <button @click="saveUserName" :disabled="savingName"
+                      class="p-1.5 rounded-lg bg-green-500/20 text-green-400 hover:bg-green-500/30 transition disabled:opacity-50">
+                      <svg v-if="savingName" class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/>
+                      </svg>
+                      <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                      </svg>
+                    </button>
+                    <button @click="editingName = false"
+                      class="p-1.5 rounded-lg bg-white/10 text-gray-400 hover:bg-white/20 transition">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                      </svg>
+                    </button>
+                  </div>
+                </template>
+              </div>
+
               <p class="text-gray-400 text-sm mt-0.5">{{ dashboardData.user.email }}</p>
 
               <div class="flex flex-wrap gap-2 mt-3">
@@ -79,13 +118,52 @@
                   :style="roleBadgeStyle">
                   {{ dashboardData.user.role.name }}
                 </span>
-                <!-- Class badge -->
-                <span v-if="dashboardData.user.class"
-                  class="px-3 py-1 rounded-full text-xs font-medium bg-white/10 text-white/80 border border-white/10">
-                  {{ dashboardData.user.class.name }}
-                  <!-- <span v-if="dashboardData.user.class.level" class="text-white/50 ml-1">·
-                    {{ dashboardData.user.class.level }}</span> -->
-                </span>
+                <!-- Class badge (inline edit) -->
+                <template v-if="!editingClass">
+                  <span v-if="dashboardData.user.class"
+                    @click="startEditClass"
+                    class="group/class flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-white/10 text-white/80 border border-white/10 cursor-pointer hover:bg-white/15 hover:border-white/20 transition"
+                    title="Changer de classe">
+                    {{ dashboardData.user.class.name }}
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 opacity-40 group-hover/class:opacity-80 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M15.232 5.232l3.536 3.536M9 13l6.293-6.293a1 1 0 011.414 0l1.586 1.586a1 1 0 010 1.414L12 16H9v-3z" />
+                    </svg>
+                  </span>
+                  <span v-else
+                    @click="startEditClass"
+                    class="px-3 py-1 rounded-full text-xs font-medium bg-white/5 text-white/40 border border-dashed border-white/20 cursor-pointer hover:bg-white/10 transition"
+                    title="Assigner une classe">
+                    + Ajouter une classe
+                  </span>
+                </template>
+                <template v-else>
+                  <div class="flex items-center gap-2">
+                    <select v-model="selectedClassId"
+                      class="px-3 py-1 rounded-lg bg-white/10 border border-white/20 text-white text-xs focus:outline-none focus:border-white/50">
+                      <option value="" class="bg-gray-900">— Aucune classe —</option>
+                      <option v-for="c in availableClasses" :key="c.id" :value="c.id" class="bg-gray-900">
+                        {{ c.name }}{{ c.level ? ` (${c.level})` : '' }}
+                      </option>
+                    </select>
+                    <button @click="saveUserClass" :disabled="savingClass"
+                      class="p-1.5 rounded-lg bg-green-500/20 text-green-400 hover:bg-green-500/30 transition disabled:opacity-50">
+                      <svg v-if="savingClass" class="animate-spin h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/>
+                      </svg>
+                      <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                      </svg>
+                    </button>
+                    <button @click="editingClass = false"
+                      class="p-1.5 rounded-lg bg-white/10 text-gray-400 hover:bg-white/20 transition">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                      </svg>
+                    </button>
+                  </div>
+                </template>
                 <!-- Specialization badge -->
                 <span v-if="dashboardData.user.specialization"
                   class="px-3 py-1 rounded-full text-xs font-medium bg-blue-500/15 text-blue-300 border border-blue-500/20">
@@ -100,20 +178,20 @@
             </div>
 
             <!-- Stats row -->
-            <div class="flex gap-4 md:gap-6 shrink-0">
+            <div class="flex gap-4 sm:gap-6 shrink-0 sm:ml-auto">
               <div class="text-center">
                 <p class="text-2xl font-bold text-white">{{ dashboardData.activeLoans.length }}</p>
-                <p class="text-xs text-gray-500 mt-0.5">Emprunts actifs</p>
+                <p class="text-xs text-gray-300 mt-0.5">Emprunts actifs</p>
               </div>
-              <div class="w-px bg-white/10 self-stretch hidden md:block"></div>
+              <div class="w-px bg-white/20 self-stretch"></div>
               <div class="text-center">
                 <p class="text-2xl font-bold text-white">{{ dashboardData.articles.length }}</p>
-                <p class="text-xs text-gray-500 mt-0.5">Articles</p>
+                <p class="text-xs text-gray-300 mt-0.5">Articles</p>
               </div>
-              <div class="w-px bg-white/10 self-stretch hidden md:block"></div>
+              <div class="w-px bg-white/20 self-stretch"></div>
               <div class="text-center">
                 <p class="text-2xl font-bold text-white">{{ dashboardData.listings.length }}</p>
-                <p class="text-xs text-gray-500 mt-0.5">Annonces</p>
+                <p class="text-xs text-gray-300 mt-0.5">Annonces</p>
               </div>
             </div>
           </div>
@@ -135,7 +213,7 @@
 
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div v-for="loan in dashboardData.pendingRequests" :key="loan.id"
-              class="rounded-[20px] p-4 border border-yellow-500/30 bg-yellow-500/5 transition-all duration-200">
+              class="rounded-[20px] p-4 border border-yellow-500/40 backdrop-blur-md transition-all duration-200" style="background: rgba(234,179,8,0.08);">
 
               <div class="flex items-start justify-between gap-2 mb-2">
                 <h3 class="text-sm font-semibold text-white leading-tight">
@@ -143,13 +221,13 @@
                 </h3>
               </div>
 
-              <div class="text-xs text-gray-400 mb-3 space-y-1">
-                <p><span class="text-gray-500">Par :</span> {{ loan.borrower?.firstName }} {{ loan.borrower?.lastName }}
-                  <span class="text-gray-500">({{ loan.borrower?.email }})</span></p>
-                <p><span class="text-gray-500">Quantité demandée :</span> <span class="text-white">{{
+              <div class="text-xs text-gray-300 mb-3 space-y-1">
+                <p><span class="text-gray-400">Par :</span> {{ loan.borrower?.firstName }} {{ loan.borrower?.lastName }}
+                  <span class="text-gray-400">({{ loan.borrower?.email }})</span></p>
+                <p><span class="text-gray-400">Quantité demandée :</span> <span class="text-white">{{
                   loan.quantityRequested }}</span></p>
                 <div v-if="loan.notes" class="mt-2 bg-black/40 p-2 rounded">
-                  <span class="text-gray-500 italic">Notes/Motif :</span> {{ loan.notes }}
+                  <span class="text-gray-400 italic">Notes/Motif :</span> {{ loan.notes }}
                 </div>
               </div>
 
@@ -187,17 +265,17 @@
 
           <!-- Empty -->
           <div v-if="!dashboardData.activeLoans.length"
-            class="rounded-[20px] p-8 text-center text-gray-500 border border-white/5"
-            style="background: rgba(255,255,255,0.02);">
+            class="rounded-[20px] p-8 text-center text-gray-400 border border-white/20 backdrop-blur-md"
+            style="background: rgba(255,255,255,0.08);">
             Aucun emprunt en cours.
           </div>
 
           <!-- Loans list -->
           <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div v-for="loan in dashboardData.activeLoans" :key="loan.id"
-              class="rounded-[20px] p-4 border transition-all duration-200 hover:scale-[1.01]" :class="loan.isOverdue
-                ? 'border-red-500/30 bg-red-500/5'
-                : 'border-white/8 bg-white/3'">
+              class="rounded-[20px] p-4 border transition-all duration-200 hover:scale-[1.01] backdrop-blur-md" :class="loan.isOverdue
+                ? 'border-red-500/40 bg-red-500/10'
+                : 'border-white/20'" :style="loan.isOverdue ? '' : 'background: rgba(255,255,255,0.08);'">
 
               <div class="flex items-start justify-between gap-2 mb-3">
                 <h3 class="text-sm font-semibold text-white leading-tight line-clamp-2">
@@ -209,27 +287,27 @@
                 </span>
               </div>
 
-              <p class="text-xs text-gray-500 mb-1">{{ loan.item.category }}</p>
-              <p v-if="loan.item.location" class="text-xs text-gray-600">📍 {{ loan.item.location }}</p>
+              <p class="text-xs text-gray-300 mb-1">{{ loan.item.category }}</p>
+              <p v-if="loan.item.location" class="text-xs text-gray-400">📍 {{ loan.item.location }}</p>
 
-              <div class="mt-3 pt-3 border-t border-white/5 space-y-1">
+              <div class="mt-3 pt-3 border-t border-white/10 space-y-1">
                 <div v-if="loan.loanDate" class="flex justify-between text-xs">
-                  <span class="text-gray-500">Emprunté le</span>
-                  <span class="text-gray-300">{{ formatDate(loan.loanDate) }}</span>
+                  <span class="text-gray-400">Emprunté le</span>
+                  <span class="text-gray-200">{{ formatDate(loan.loanDate) }}</span>
                 </div>
                 <div v-if="loan.expectedReturnDate" class="flex justify-between text-xs">
-                  <span class="text-gray-500">À rendre le</span>
-                  <span :class="loan.isOverdue ? 'text-red-400 font-semibold' : 'text-gray-300'">
+                  <span class="text-gray-400">À rendre le</span>
+                  <span :class="loan.isOverdue ? 'text-red-400 font-semibold' : 'text-gray-200'">
                     {{ formatDate(loan.expectedReturnDate) }}
                     <span v-if="loan.isOverdue" class="ml-1">⚠️</span>
                   </span>
                 </div>
                 <div class="flex justify-between text-xs">
-                  <span class="text-gray-500">Quantité</span>
-                  <span class="text-gray-300">{{ loan.quantityApproved ?? loan.quantityRequested }}</span>
+                  <span class="text-gray-400">Quantité</span>
+                  <span class="text-gray-200">{{ loan.quantityApproved ?? loan.quantityRequested }}</span>
                 </div>
-                <div v-if="loan.notes" class="text-xs text-gray-400 mt-2 bg-white/5 p-2 rounded line-clamp-2">
-                  <span class="text-gray-500 italic">Motif :</span> {{ loan.notes }}
+                <div v-if="loan.notes" class="text-xs text-gray-300 mt-2 bg-white/10 p-2 rounded line-clamp-2">
+                  <span class="text-gray-400 italic">Motif :</span> {{ loan.notes }}
                 </div>
               </div>
             </div>
@@ -255,27 +333,27 @@
             </button>
           </div>
 
-          <div class="rounded-[20px] overflow-hidden border border-white/8" style="background: rgba(255,255,255,0.02);">
-            <div v-if="!dashboardData.loanHistory.length" class="p-8 text-center text-gray-500">
+          <div class="rounded-[20px] overflow-hidden border border-white/20 backdrop-blur-md" style="background: rgba(255,255,255,0.08);">
+            <div v-if="!dashboardData.loanHistory.length" class="p-8 text-center text-gray-400">
               Aucun historique.
             </div>
-            <ul v-else class="divide-y divide-white/5">
+            <ul v-else class="divide-y divide-white/10">
               <li v-for="loan in dashboardData.loanHistory.slice(0, 5)" :key="loan.id"
-                class="flex items-center gap-4 px-4 py-3 hover:bg-white/3 transition">
+                class="flex items-center gap-4 px-4 py-3 hover:bg-white/10 transition">
                 <!-- Icon -->
                 <div class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 text-sm"
-                  :class="loan.status === 'returned' ? 'bg-green-500/15 text-green-400' : 'bg-red-500/15 text-red-400'">
+                  :class="loan.status === 'returned' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'">
                   {{ loan.status === 'returned' ? '✓' : '✗' }}
                 </div>
                 <div class="flex-1 min-w-0">
                   <p class="text-sm font-medium text-white truncate">{{ loan.item.name }}</p>
-                  <p class="text-xs text-gray-500">
+                  <p class="text-xs text-gray-300">
                     {{ loan.actualReturnDate ? `Rendu le ${formatDate(loan.actualReturnDate)}` :
                       formatDate(loan.updatedAt) }}
                   </p>
                 </div>
                 <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full shrink-0"
-                  :class="loan.status === 'returned' ? 'bg-green-500/15 text-green-400' : 'bg-red-500/15 text-red-400'">
+                  :class="loan.status === 'returned' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'">
                   {{ loanStatusLabel(loan.status, false) }}
                 </span>
               </li>
@@ -299,18 +377,18 @@
             </NuxtLink>
           </div>
 
-          <div class="rounded-[20px] overflow-hidden border border-white/8" style="background: rgba(255,255,255,0.02);">
-            <div v-if="!dashboardData.articles.length" class="p-8 text-center text-gray-500">
+          <div class="rounded-[20px] overflow-hidden border border-white/20 backdrop-blur-md" style="background: rgba(255,255,255,0.08);">
+            <div v-if="!dashboardData.articles.length" class="p-8 text-center text-gray-400">
               Vous n'avez pas encore publié d'article.
             </div>
-            <ul v-else class="divide-y divide-white/5">
+            <ul v-else class="divide-y divide-white/10">
               <li v-for="article in dashboardData.articles.slice(0, 5)" :key="article.id"
-                class="flex items-start gap-4 px-4 py-3 hover:bg-white/3 transition">
+                class="flex items-start gap-4 px-4 py-3 hover:bg-white/10 transition">
                 <!-- Thumbnail or fallback -->
-                <div class="w-10 h-10 rounded-lg overflow-hidden shrink-0 bg-white/5 flex items-center justify-center">
+                <div class="w-10 h-10 rounded-lg overflow-hidden shrink-0 bg-white/10 flex items-center justify-center">
                   <img v-if="article.images && article.images.length > 0" :src="article.images[0]" :alt="article.title"
                     class="w-full h-full object-cover" />
-                  <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white/20" fill="none"
+                  <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white/30" fill="none"
                     viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
                       d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -319,9 +397,9 @@
                 <div class="flex-1 min-w-0">
                   <p class="text-sm font-medium text-white truncate">{{ article.title }}</p>
                   <div class="flex items-center gap-2 mt-0.5">
-                    <span class="text-xs text-gray-500">{{ article.category }}</span>
-                    <span class="text-white/20">·</span>
-                    <span class="text-xs text-gray-500">{{ formatDate(article.createdAt) }}</span>
+                    <span class="text-xs text-gray-300">{{ article.category }}</span>
+                    <span class="text-white/30">·</span>
+                    <span class="text-xs text-gray-300">{{ formatDate(article.createdAt) }}</span>
                   </div>
                 </div>
                 <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full shrink-0 mt-0.5"
@@ -351,15 +429,15 @@
           </div>
 
           <div v-if="!dashboardData.listings.length"
-            class="rounded-[20px] p-8 text-center text-gray-500 border border-white/5"
-            style="background: rgba(255,255,255,0.02);">
+            class="rounded-[20px] p-8 text-center text-gray-400 border border-white/20 backdrop-blur-md"
+            style="background: rgba(255,255,255,0.08);">
             Vous n'avez aucune annonce active.
           </div>
 
           <div v-else class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             <NuxtLink v-for="listing in dashboardData.listings" :key="listing.id" :to="`/MarketPlace/${listing.id}`"
-              class="group relative rounded-[20px] overflow-hidden border border-white/8 transition-all duration-300 hover:scale-[1.02] hover:border-white/20"
-              style="background: rgba(255,255,255,0.03);">
+              class="group relative rounded-[20px] overflow-hidden border border-white/20 transition-all duration-300 hover:scale-[1.02] hover:border-white/40 backdrop-blur-md"
+              style="background: rgba(255,255,255,0.08);">
 
               <!-- Image or fallback -->
               <div class="h-36 overflow-hidden relative">
@@ -367,7 +445,7 @@
                   class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
                 <div v-else
                   class="w-full h-full flex items-center justify-center bg-gradient-to-br from-purple-900/30 to-blue-900/30">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-white/15" fill="none"
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-white/20" fill="none"
                     viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1"
                       d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -388,12 +466,12 @@
                   {{ listing.mainItem?.name ?? 'Annonce' }}
                 </h3>
                 <div class="flex items-center justify-between mt-1">
-                  <span class="text-xs text-gray-500">{{ listing.mainItem?.category ?? 'N/A' }}</span>
+                  <span class="text-xs text-gray-300">{{ listing.mainItem?.category ?? 'N/A' }}</span>
                   <span v-if="listing.mainItem?.price" class="text-sm font-bold text-white">
                     {{ listing.mainItem.price.toFixed(2) }} €
                   </span>
                 </div>
-                <p class="text-[10px] text-gray-600 mt-1">
+                <p class="text-[10px] text-gray-400 mt-1">
                   Mis en vente le {{ formatDate(listing.createdAt) }}
                 </p>
               </div>
@@ -422,22 +500,22 @@
             <div class="overflow-y-auto flex-1 px-6 py-4">
               <ul class="space-y-2">
                 <li v-for="loan in dashboardData?.loanHistory" :key="loan.id"
-                  class="flex items-center gap-4 p-3 rounded-xl border border-white/5 hover:border-white/10 transition"
-                  style="background: rgba(255,255,255,0.02);">
+                  class="flex items-center gap-4 p-3 rounded-xl border border-white/15 hover:border-white/25 transition"
+                  style="background: rgba(255,255,255,0.06);">
                   <div class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 text-sm"
-                    :class="loan.status === 'returned' ? 'bg-green-500/15 text-green-400' : 'bg-red-500/15 text-red-400'">
+                    :class="loan.status === 'returned' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'">
                     {{ loan.status === 'returned' ? '✓' : '✗' }}
                   </div>
                   <div class="flex-1 min-w-0">
                     <p class="text-sm font-medium text-white truncate">{{ loan.item.name }}</p>
-                    <p class="text-xs text-gray-500">{{ loan.item.category }}</p>
-                    <div class="flex gap-4 mt-1 text-xs text-gray-500">
+                    <p class="text-xs text-gray-300">{{ loan.item.category }}</p>
+                    <div class="flex gap-4 mt-1 text-xs text-gray-300">
                       <span v-if="loan.loanDate">Emprunté : {{ formatDate(loan.loanDate) }}</span>
                       <span v-if="loan.actualReturnDate">Rendu : {{ formatDate(loan.actualReturnDate) }}</span>
                     </div>
                   </div>
                   <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full shrink-0"
-                    :class="loan.status === 'returned' ? 'bg-green-500/15 text-green-400' : 'bg-red-500/15 text-red-400'">
+                    :class="loan.status === 'returned' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'">
                     {{ loanStatusLabel(loan.status, false) }}
                   </span>
                 </li>
@@ -534,6 +612,85 @@ interface ApiResponse {
 
 // ---- State ----
 const showHistoryModal = ref(false);
+
+// ---- Edit name ----
+const editingName = ref(false);
+const savingName = ref(false);
+const nameForm = ref({ firstName: '', lastName: '' });
+
+const startEditName = () => {
+  if (!dashboardData.value) return;
+  nameForm.value.firstName = dashboardData.value.user.firstName;
+  nameForm.value.lastName = dashboardData.value.user.lastName;
+  editingName.value = true;
+};
+
+const saveUserName = async () => {
+  if (!dashboardData.value || savingName.value) return;
+  if (!nameForm.value.firstName.trim() || !nameForm.value.lastName.trim()) return;
+  savingName.value = true;
+  try {
+    const { useAuth } = await import('~/composables/useAuth');
+    const { token } = useAuth();
+    const res = await $fetch<{ success: boolean; data: { user: any } }>(
+      `/api/users/${dashboardData.value.user.id}`,
+      {
+        method: 'PUT',
+        headers: token.value ? { Authorization: `Bearer ${token.value}` } : {},
+        body: { firstName: nameForm.value.firstName.trim(), lastName: nameForm.value.lastName.trim() },
+      }
+    );
+    if (res.success && data.value?.data?.user) {
+      data.value.data.user.firstName = res.data.user.firstName;
+      data.value.data.user.lastName = res.data.user.lastName;
+    }
+    editingName.value = false;
+  } catch (e) {
+    console.error('Failed to update name:', e);
+  } finally {
+    savingName.value = false;
+  }
+};
+
+// ---- Edit class ----
+const editingClass = ref(false);
+const savingClass = ref(false);
+const selectedClassId = ref('');
+const availableClasses = ref<{ id: string; name: string; level?: string | null }[]>([]);
+
+const startEditClass = async () => {
+  if (!availableClasses.value.length) {
+    const res = await $fetch<{ success: boolean; data: { classes: { id: string; name: string; level?: string | null }[] } }>('/api/classes');
+    if (res.success) availableClasses.value = res.data.classes;
+  }
+  selectedClassId.value = dashboardData.value?.user.class?.id ?? '';
+  editingClass.value = true;
+};
+
+const saveUserClass = async () => {
+  if (!dashboardData.value || savingClass.value) return;
+  savingClass.value = true;
+  try {
+    const { useAuth } = await import('~/composables/useAuth');
+    const { token } = useAuth();
+    const res = await $fetch<{ success: boolean; data: { user: any } }>(
+      `/api/users/${dashboardData.value.user.id}`,
+      {
+        method: 'PUT',
+        headers: token.value ? { Authorization: `Bearer ${token.value}` } : {},
+        body: { classId: selectedClassId.value || null },
+      }
+    );
+    if (res.success && data.value?.data?.user) {
+      data.value.data.user.class = res.data.user.class;
+    }
+    editingClass.value = false;
+  } catch (e) {
+    console.error('Failed to update class:', e);
+  } finally {
+    savingClass.value = false;
+  }
+};
 
 // ---- Avatar ----
 const avatarUrl = ref<string | null>(null);

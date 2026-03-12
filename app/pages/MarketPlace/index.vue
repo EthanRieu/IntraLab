@@ -1,23 +1,11 @@
 <template>
   <div class="container mx-auto px-4 py-8">
-    <div class="mb-8 flex flex-col md:flex-row justify-between items-center gap-4">
-      <h1 class="text-6xl font-bold bg-clip-text text-white uppercase">
-        MARKETPLACE.
-      </h1>
+    <div class="mb-8 flex flex-col gap-4">
+      <h1 class="text-4xl sm:text-6xl font-bold text-white uppercase">MARKETPLACE.</h1>
 
-      <div class="flex flex-row gap-4 items-center">
-        <!-- Add Item Button -->
-        <button @click="showAddModal = true"
-          class="px-5 py-2.5 bg-white text-black font-extrabold uppercase text-[11px] tracking-[0.15em] rounded-full hover:bg-gray-200 hover:scale-105 active:scale-95 transition-all shadow-[0_0_20px_rgba(255,255,255,0.15)] flex items-center shrink-0">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24"
-            stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-          </svg>
-          Mettre en vente
-        </button>
-
+      <div class="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
         <!-- Search Pill -->
-        <div class="relative group">
+        <div class="relative flex-1 sm:flex-none">
           <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24"
               stroke="currentColor">
@@ -26,13 +14,13 @@
             </svg>
           </div>
           <input v-model="search" type="text" placeholder="Rechercher un article"
-            class="w-64 md:w-80 pl-10 pr-4 py-2 bg-[#1a1a1a]/80 border border-white/10 rounded-full text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-white/20 transition-all shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1)] hover:bg-[#1a1a1a]" />
+            class="w-full sm:w-64 md:w-80 pl-10 pr-4 py-2 bg-[#1a1a1a]/80 border border-white/10 rounded-full text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-white/20 transition-all shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1)] hover:bg-[#1a1a1a]" />
         </div>
 
         <!-- Category/Filter Pill -->
         <div class="relative">
           <select v-model="selectedCategory"
-            class="appearance-none pl-4 pr-10 py-2 bg-[#1a1a1a]/80 border border-white/10 rounded-full text-white focus:outline-none focus:ring-1 focus:ring-white/20 cursor-pointer shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1)] hover:bg-[#1a1a1a]">
+            class="appearance-none w-full sm:w-auto pl-4 pr-10 py-2 bg-[#1a1a1a]/80 border border-white/10 rounded-full text-white focus:outline-none focus:ring-1 focus:ring-white/20 cursor-pointer shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1)] hover:bg-[#1a1a1a]">
             <option value="">Filtres</option>
             <option v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</option>
           </select>
@@ -43,6 +31,16 @@
             </svg>
           </div>
         </div>
+
+        <!-- Add Button -->
+        <button @click="showAddModal = true"
+          class="ml-auto px-4 sm:px-5 py-2 bg-white text-black font-extrabold uppercase text-[11px] tracking-[0.15em] rounded-full hover:bg-gray-200 hover:scale-105 active:scale-95 transition-all shadow-[0_0_20px_rgba(255,255,255,0.15)] flex items-center shrink-0">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+          </svg>
+          <span class="hidden sm:inline">Mettre en vente</span>
+          <span class="sm:hidden">Vendre</span>
+        </button>
       </div>
     </div>
 

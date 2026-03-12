@@ -11,6 +11,9 @@ export default defineNuxtConfig({
         '.prisma/client/index-browser': './node_modules/@prisma/client/index-browser.js',
       },
     },
+    server: {
+      allowedHosts: true,
+    },
   },
   modules: [
     '@prisma/nuxt'

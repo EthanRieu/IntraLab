@@ -27,15 +27,21 @@ const handleLogin = async () => {
 </script>
 
 <template>
-  <div class="min-h-[calc(100vh-100px)] flex flex-col items-center justify-center relative -mt-10 overflow-hidden">
+  <div class="min-h-[calc(100vh-100px)] flex flex-col relative -mt-10 overflow-hidden">
 
     <!-- Ambient Backlight -->
     <div
       class="absolute w-[80vw] md:w-[600px] h-[80vw] md:h-[600px] bg-[#222E42]/10 blur-[150px] rounded-full z-0 pointer-events-none">
     </div>
 
+    <!-- Title -->
+    <div class="relative z-10 px-6 md:px-24 pt-24 mb-8">
+      <h1 class="text-6xl font-bold text-white uppercase">Connexion.</h1>
+    </div>
+
     <!-- Main Login Container (The Floating Module) -->
-    <div class="w-full max-w-[420px] relative z-10 px-4">
+    <div class="flex-1 flex items-center justify-center px-4 pb-8">
+    <div class="w-full max-w-[420px] relative z-10">
 
       <GlassSurface :border-radius="20" :opacity="0.25" :border-width="0.08" :brightness="60" :blur="24" width="100%"
         height="auto" class="px-8 pt-10 pb-12">
@@ -85,6 +91,7 @@ const handleLogin = async () => {
           </div>
         </form>
       </GlassSurface>
+    </div>
     </div>
   </div>
 </template>

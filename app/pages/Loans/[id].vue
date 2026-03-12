@@ -1,137 +1,156 @@
 <template>
-  <div class="container mx-auto px-4 py-8 max-w-5xl">
+  <div class="container mx-auto px-4 py-8">
     <!-- Back Button -->
-    <NuxtLink to="/Loans" class="inline-flex items-center gap-2 text-gray-400 hover:text-white transition mb-8 group">
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 transform group-hover:-translate-x-1 transition"
-        fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-      </svg>
-      Retour à l'inventaire
-    </NuxtLink>
+    <div class="mb-6 flex items-center">
+      <NuxtLink to="/Loans"
+        class="inline-flex items-center text-gray-300 hover:text-white transition-colors border border-white/10 bg-white/5 rounded-full px-4 py-2 text-sm font-medium backdrop-blur-sm">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd"
+            d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z"
+            clip-rule="evenodd" />
+        </svg>
+        Retour à l'inventaire
+      </NuxtLink>
+    </div>
 
     <!-- Loading State -->
-    <div v-if="pending" class="flex justify-center items-center py-20">
-      <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+    <div v-if="pending" class="flex justify-center items-center py-32">
+      <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white"></div>
     </div>
 
     <!-- Error State -->
-    <div v-else-if="error || !item" class="text-center py-20 text-red-400">
-      <p class="text-xl">Erreur: Impossible de charger l'article.</p>
+    <div v-else-if="error || !item"
+      class="text-center py-20 bg-red-500/10 rounded-[30px] border border-red-500/20 max-w-2xl mx-auto backdrop-blur-sm">
+      <p class="text-red-400 font-medium mb-4">Erreur: Impossible de charger l'article.</p>
+      <NuxtLink to="/Loans"
+        class="px-6 py-2 bg-white/10 text-white rounded-lg hover:bg-white/20 transition-colors inline-block">
+        Retour
+      </NuxtLink>
     </div>
 
     <!-- Item Content -->
-    <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-12">
+    <div v-else class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
 
-      <!-- Left side: Image -->
-      <div class="relative w-full h-[400px] md:h-full min-h-[400px] rounded-[32px] overflow-hidden shadow-2xl">
-        <img v-if="item.imageUrl" :src="item.imageUrl" :alt="item.name" class="w-full h-full object-cover" />
-        <img v-else-if="item.name.toLowerCase().includes('flipper')"
-          src="https://images.unsplash.com/photo-1662908869151-244a56a6ec15?q=80&w=800&auto=format&fit=crop"
-          class="w-full h-full object-cover" />
-        <img v-else-if="item.name.toLowerCase().includes('câble') || item.name.toLowerCase().includes('cable')"
-          src="https://images.unsplash.com/photo-1544186450-9a28db9450a8?q=80&w=800&auto=format&fit=crop"
-          class="w-full h-full object-cover" />
-        <img v-else-if="item.name.toLowerCase().includes('raspberry') || item.name.toLowerCase().includes('pi')"
-          src="https://images.unsplash.com/photo-1631551608753-159654782cb9?q=80&w=800&auto=format&fit=crop"
-          class="w-full h-full object-cover" />
-        <div v-else class="w-full h-full bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-24 w-24 text-white/10" fill="none" viewBox="0 0 24 24"
-            stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1"
-              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-          </svg>
+      <!-- Left Column: Image -->
+      <div class="relative w-full overflow-visible">
+        <div class="relative w-full aspect-square md:aspect-[4/3] lg:aspect-square rounded-[30px] overflow-hidden shadow-2xl">
+          <div class="absolute inset-0 rounded-[30px] transition-opacity duration-300 pointer-events-none opacity-80"
+            :style="{ boxShadow: `0 0 80px 10px ${imageColor || 'rgba(255,255,255,0.1)'}` }">
+          </div>
+
+          <img v-if="itemImage" :src="itemImage" :alt="item.name" crossorigin="anonymous"
+            @load="extractColor" class="absolute inset-0 w-full h-full object-cover z-10 rounded-[30px]" />
+          <div v-else
+            class="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center z-10 rounded-[30px]">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-24 w-24 text-white/20" fill="none" viewBox="0 0 24 24"
+              stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1"
+                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          </div>
         </div>
       </div>
 
-      <!-- Right side: Info and Form -->
-      <div class="flex flex-col justify-center">
-        <div class="mb-4">
-          <span v-if="item.category"
-            class="inline-block px-3 py-1 bg-purple-500/20 text-purple-300 rounded-full text-xs font-bold tracking-wider uppercase mb-4 border border-purple-500/30">
-            {{ item.category }}
-          </span>
-          <h1 class="text-3xl md:text-5xl font-extrabold text-white leading-tight mb-2">
-            {{ item.name }}
-          </h1>
-          <p class="text-gray-400 text-lg">
-            Emplacement : <span class="text-white">{{ item.location || 'Non spécifié' }}</span>
-          </p>
-        </div>
+      <!-- Right Column: Details -->
+      <div class="flex flex-col gap-6">
 
-        <p class="text-gray-300 mb-8 leading-relaxed">
-          {{ item.description || "Aucune description fournie pour cet article." }}
-        </p>
-
-        <div class="bg-white/5 border border-white/10 rounded-2xl p-6 mb-8 flex items-center justify-between">
-          <span class="text-gray-400 font-medium">Stock disponible</span>
-          <span class="text-3xl font-bold font-mono"
-            :class="item.quantityAvailable > 0 ? 'text-green-400' : 'text-red-400'">
-            {{ item.quantityAvailable }} <span class="text-sm font-normal text-gray-500">/ {{ item.quantity }}</span>
-          </span>
-        </div>
-
-        <div v-if="!isAuthenticated"
-          class="p-4 bg-yellow-500/10 border border-yellow-500/20 text-yellow-200 rounded-xl">
-          Vous devez être connecté pour faire une demande d'emprunt.
-        </div>
-
-        <div v-else-if="item.quantityAvailable === 0"
-          class="p-4 bg-red-500/10 border border-red-500/20 text-red-200 rounded-xl">
-          Article momentanément indisponible. Tous les exemplaires sont empruntés.
-        </div>
-
-        <!-- Borrow Form -->
-        <form v-else @submit.prevent="submitLoanRequest"
-          class="space-y-6 bg-[#161616] border border-white/10 p-6 rounded-3xl">
-          <h3 class="text-xl font-bold text-white mb-4">Demander un emprunt</h3>
-
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <!-- Start Date -->
-            <div>
-              <label class="block text-sm font-medium text-gray-400 mb-2">Du</label>
-              <input v-model="form.startDate" type="date" required :min="minDate"
-                class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition">
+        <!-- Item Info Card -->
+        <GlassSurface :border-radius="30" :opacity="0.53" :border-width="0.07" :brightness="50" :blur="11" width="100%"
+          class="relative z-20 overflow-hidden">
+          <div class="p-8 w-full">
+            <div class="flex flex-col md:flex-row md:justify-between md:items-start mb-4 gap-4">
+              <h1 class="text-3xl md:text-4xl font-bold text-white break-words w-full">{{ item.name }}</h1>
+              <div
+                class="font-bold px-4 py-2 rounded-xl border backdrop-blur-md whitespace-nowrap self-start"
+                :class="item.quantityAvailable > 0
+                  ? 'bg-green-500/20 text-green-200 border-green-500/20'
+                  : 'bg-red-500/20 text-red-200 border-red-500/20'">
+                {{ item.quantityAvailable }} / {{ item.quantity }}
+              </div>
             </div>
 
-            <!-- Expected Return Date -->
-            <div>
-              <label class="block text-sm font-medium text-gray-400 mb-2">Au (max 9 mois)</label>
-              <input v-model="form.endDate" type="date" required :min="form.startDate || minDate" :max="maxDate"
-                class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition">
+            <div class="flex flex-wrap gap-2 mb-6">
+              <span v-if="item.category" class="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-sm text-gray-300">
+                {{ item.category }}
+              </span>
+              <span v-if="item.location" class="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-sm text-gray-300">
+                📍 {{ item.location }}
+              </span>
+            </div>
+
+            <div class="w-full">
+              <h3 class="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2">Description</h3>
+              <p class="text-gray-200 text-sm md:text-base leading-relaxed whitespace-pre-line break-words w-full">
+                {{ item.description || 'Aucune description fournie.' }}
+              </p>
             </div>
           </div>
+        </GlassSurface>
 
-          <!-- Quantity Option (Defaults to 1, hidden or locked to max items available) -->
-          <div>
-            <label class="block text-sm font-medium text-gray-400 mb-2">Quantité</label>
-            <input v-model.number="form.quantity" type="number" min="1" :max="Math.min(10, item.quantityAvailable)"
-              required
-              class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition">
+        <!-- Borrow Form Card -->
+        <GlassSurface :border-radius="30" :opacity="0.3" :border-width="0.05" :brightness="50" :blur="11" width="100%"
+          class="relative z-20 overflow-hidden">
+          <div class="p-8 w-full">
+            <h3 class="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              Demander un emprunt
+            </h3>
+
+            <div v-if="!isAuthenticated" class="p-4 bg-yellow-500/10 border border-yellow-500/20 text-yellow-200 rounded-xl">
+              Vous devez être connecté pour faire une demande d'emprunt.
+            </div>
+
+            <div v-else-if="item.quantityAvailable === 0" class="p-4 bg-red-500/10 border border-red-500/20 text-red-200 rounded-xl">
+              Article momentanément indisponible. Tous les exemplaires sont empruntés.
+            </div>
+
+            <form v-else @submit.prevent="submitLoanRequest" class="space-y-5">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-medium text-gray-400 mb-2">Du</label>
+                  <input v-model="form.startDate" type="date" required :min="minDate"
+                    class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition">
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-400 mb-2">Au (max 9 mois)</label>
+                  <input v-model="form.endDate" type="date" required :min="form.startDate || minDate" :max="maxDate"
+                    class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition">
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-400 mb-2">Quantité</label>
+                <input v-model.number="form.quantity" type="number" min="1" :max="Math.min(10, item.quantityAvailable)"
+                  required
+                  class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition">
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-400 mb-2">Motif de l'emprunt <span class="text-red-500">*</span></label>
+                <textarea v-model="form.reason" rows="3" required
+                  placeholder="Expliquez pourquoi vous avez besoin de cet article..."
+                  class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition resize-none"></textarea>
+              </div>
+
+              <button type="submit" :disabled="isSubmitting"
+                class="w-full flex items-center justify-center gap-2 py-3 px-4 bg-indigo-600 hover:bg-indigo-500 text-white font-medium rounded-xl transition-colors shadow-[0_0_15px_rgba(79,70,229,0.3)] disabled:opacity-50">
+                <span v-if="isSubmitting" class="w-5 h-5 rounded-full border-2 border-white/30 border-t-white animate-spin"></span>
+                {{ isSubmitting ? 'Envoi...' : 'Réserver' }}
+              </button>
+
+              <p v-if="successMessage" class="text-green-400 text-center text-sm p-3 bg-green-500/10 rounded-lg">
+                {{ successMessage }}
+              </p>
+              <p v-if="errorMessage" class="text-red-400 text-center text-sm p-3 bg-red-500/10 rounded-lg">
+                {{ errorMessage }}
+              </p>
+            </form>
           </div>
-
-          <!-- Reason -->
-          <div>
-            <label class="block text-sm font-medium text-gray-400 mb-2">Motif de l'emprunt <span
-                class="text-red-500">*</span></label>
-            <textarea v-model="form.reason" rows="3" required
-              placeholder="Expliquez pourquoi vous avez besoin de cet article..."
-              class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition resize-none"></textarea>
-          </div>
-
-          <button type="submit" :disabled="isSubmitting"
-            class="w-full py-4 bg-purple-600 hover:bg-purple-500 text-white rounded-xl font-bold text-lg transition shadow-lg shadow-purple-500/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
-            <span v-if="isSubmitting"
-              class="w-5 h-5 rounded-full border-2 border-white/30 border-t-white animate-spin"></span>
-            {{ isSubmitting ? 'Envoi...' : 'Réserver' }}
-          </button>
-
-          <p v-if="successMessage" class="text-green-400 text-center text-sm mt-4 p-3 bg-green-500/10 rounded-lg">
-            {{ successMessage }}
-          </p>
-          <p v-if="errorMessage" class="text-red-400 text-center text-sm mt-4 p-3 bg-red-500/10 rounded-lg">
-            {{ errorMessage }}
-          </p>
-        </form>
+        </GlassSurface>
 
       </div>
     </div>
@@ -142,6 +161,8 @@
 import { ref, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { useAuth } from '~/composables/useAuth';
+import { FastAverageColor } from 'fast-average-color';
+import GlassSurface from '~/components/ui/GlassSurface.vue';
 
 const route = useRoute();
 const itemId = route.params.id as string;
@@ -162,6 +183,28 @@ const maxDate = maxDateObj.toISOString().split('T')[0];
 // For now, I'll fetch `/api/inventory` limit 1000 and find it as a fallback, but no, let's fetch correctly. Wait, does `/api/inventory` allow fetching by ID? Prisma can. Let's use `useFetch` to a new endpoint `/api/inventory/${itemId}` which we will create shortly.
 const { data, pending, error } = await useFetch<any>(`/api/inventory/${itemId}`);
 const item = computed(() => data.value?.data?.item);
+
+const itemImage = computed(() => {
+  if (item.value?.imageUrl) return item.value.imageUrl;
+  const name = (item.value?.name || '').toLowerCase();
+  if (name.includes('flipper')) return 'https://images.unsplash.com/photo-1662908869151-244a56a6ec15?q=80&w=800&auto=format&fit=crop';
+  if (name.includes('câble') || name.includes('cable')) return 'https://images.unsplash.com/photo-1544186450-9a28db9450a8?q=80&w=800&auto=format&fit=crop';
+  if (name.includes('raspberry') || name.includes('pi')) return 'https://images.unsplash.com/photo-1631551608753-159654782cb9?q=80&w=800&auto=format&fit=crop';
+  return undefined;
+});
+
+const imageColor = ref<string>('');
+const fac = new FastAverageColor();
+
+const extractColor = async (event: Event) => {
+  const imgElement = event.target as HTMLImageElement;
+  try {
+    const color = await fac.getColorAsync(imgElement);
+    imageColor.value = color.hex;
+  } catch (e) {
+    imageColor.value = 'rgba(255,255,255,0.2)';
+  }
+};
 
 // Form state
 const isSubmitting = ref(false);

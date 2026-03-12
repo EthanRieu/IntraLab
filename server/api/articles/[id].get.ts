@@ -54,6 +54,7 @@ async function getArticleById(articleId: string, user: any) {
               first_name: true,
               last_name: true,
               email: true,
+              profile_picture_url: true,
               classes: {
                 select: {
                   slug: true,
@@ -116,6 +117,7 @@ async function getArticleById(articleId: string, user: any) {
         firstName: userArticle.users_user_article_user_idTousers.first_name,
         lastName: userArticle.users_user_article_user_idTousers.last_name,
         email: userArticle.users_user_article_user_idTousers.email,
+        avatarUrl: userArticle.users_user_article_user_idTousers.profile_picture_url ?? null,
         class: userArticle.users_user_article_user_idTousers.classes
           ? {
             slug: userArticle.users_user_article_user_idTousers.classes

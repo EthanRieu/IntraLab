@@ -1,22 +1,11 @@
 <template>
   <div class="container mx-auto px-4 py-8">
-    <div class="mb-8 flex flex-col md:flex-row justify-between items-center gap-4">
-      <h1 class="text-6xl font-bold bg-clip-text">
-        EMPRUNTS.
-      </h1>
+    <div class="mb-8 flex flex-col gap-4">
+      <h1 class="text-4xl sm:text-6xl font-bold">EMPRUNTS.</h1>
 
-      <div class="flex flex-row gap-4 items-center">
-        <!-- Create Item Button (RP/Admin only) -->
-        <button v-if="canManageInventory" @click="isCreateModalOpen = true"
-          class="px-5 py-2.5 bg-white text-black font-extrabold uppercase text-[11px] tracking-[0.15em] rounded-full hover:bg-gray-200 hover:scale-105 active:scale-95 transition-all shadow-[0_0_20px_rgba(255,255,255,0.15)] flex items-center shrink-0">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-          </svg>
-          Ajouter un équipement
-        </button>
-
+      <div class="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
         <!-- Search Pill -->
-        <div class="relative group">
+        <div class="relative flex-1 sm:flex-none">
           <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24"
               stroke="currentColor">
@@ -25,13 +14,13 @@
             </svg>
           </div>
           <input v-model="search" type="text" placeholder="Rechercher un équipement"
-            class="w-64 md:w-80 pl-10 pr-4 py-2 bg-[#1a1a1a]/80 border border-white/10 rounded-full text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-white/20 transition-all shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1)] hover:bg-[#1a1a1a]" />
+            class="w-full sm:w-64 md:w-80 pl-10 pr-4 py-2 bg-[#1a1a1a]/80 border border-white/10 rounded-full text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-white/20 transition-all shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1)] hover:bg-[#1a1a1a]" />
         </div>
 
         <!-- Category/Filter Pill -->
         <div class="relative">
           <select v-model="selectedCategory"
-            class="appearance-none pl-4 pr-10 py-2 bg-[#1a1a1a]/80 border border-white/10 rounded-full text-white focus:outline-none focus:ring-1 focus:ring-white/20 cursor-pointer shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1)] hover:bg-[#1a1a1a]">
+            class="appearance-none w-full sm:w-auto pl-4 pr-10 py-2 bg-[#1a1a1a]/80 border border-white/10 rounded-full text-white focus:outline-none focus:ring-1 focus:ring-white/20 cursor-pointer shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1)] hover:bg-[#1a1a1a]">
             <option value="">Catégories</option>
             <option v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</option>
           </select>
@@ -42,12 +31,35 @@
             </svg>
           </div>
         </div>
+
+        <!-- Add Button -->
+        <button v-if="canManageInventory" @click="isCreateModalOpen = true"
+          class="ml-auto px-4 sm:px-5 py-2 bg-white text-black font-extrabold uppercase text-[11px] tracking-[0.15em] rounded-full hover:bg-gray-200 hover:scale-105 active:scale-95 transition-all shadow-[0_0_20px_rgba(255,255,255,0.15)] flex items-center shrink-0">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+          </svg>
+          <span class="hidden sm:inline">Ajouter un équipement</span>
+          <span class="sm:hidden">Ajouter</span>
+        </button>
       </div>
     </div>
 
     <!-- Loading State -->
     <div v-if="pending" class="flex justify-center items-center py-20">
       <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+    </div>
+
+    <!-- Not authenticated State -->
+    <div v-else-if="!token" class="text-center py-20 text-gray-300">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto mb-4 text-white/20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+      </svg>
+      <p class="text-xl font-semibold text-white mb-2">Connexion requise</p>
+      <p class="text-gray-400 mb-6">Vous devez être connecté pour accéder à l'inventaire des emprunts.</p>
+      <NuxtLink to="/Auth/signIn"
+        class="inline-block px-6 py-2.5 bg-white text-black font-bold rounded-full hover:bg-gray-200 transition">
+        Se connecter
+      </NuxtLink>
     </div>
 
     <!-- Error State -->
@@ -66,8 +78,8 @@
     <!-- Items Grid -->
     <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       <NuxtLink v-for="item in items" :key="item.id" :to="'/Loans/' + item.id"
-        class="group relative rounded-[24px] overflow-hidden border border-white/8 hover:border-white/20 transition-all duration-300 hover:scale-[1.02] block cursor-pointer"
-        style="background: rgba(255,255,255,0.03);">
+        class="group relative rounded-[24px] overflow-hidden border border-white/20 hover:border-white/40 transition-all duration-300 hover:scale-[1.02] block cursor-pointer backdrop-blur-md"
+        style="background: rgba(255,255,255,0.08);">
 
         <!-- Cover Image -->
         <div class="relative h-48 overflow-hidden">
@@ -87,7 +99,7 @@
             class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
           <div v-else
             class="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-800/60 to-gray-900/60">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-white/10" fill="none" viewBox="0 0 24 24"
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-white/20" fill="none" viewBox="0 0 24 24"
               stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1"
                 d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -95,13 +107,13 @@
           </div>
           <!-- Category badge overlay -->
           <div class="absolute top-3 left-3">
-            <span class="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-black/50 backdrop-blur-sm text-white/80 border border-white/10">
+            <span class="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-black/50 backdrop-blur-sm text-white border border-white/20">
               {{ item.category || 'Non catégorisé' }}
             </span>
           </div>
           <!-- Stock badge -->
           <div class="absolute top-3 right-3">
-            <span class="text-[10px] font-bold px-2.5 py-1 rounded-full bg-black/50 backdrop-blur-sm border border-white/10"
+            <span class="text-[10px] font-bold px-2.5 py-1 rounded-full bg-black/50 backdrop-blur-sm border border-white/20"
               :class="item.quantityAvailable > 0 ? 'text-green-400' : 'text-red-400'">
               {{ item.quantityAvailable > 0 ? `${item.quantityAvailable} dispo.` : 'Indisponible' }}
             </span>
@@ -113,10 +125,10 @@
           <h2 class="text-base font-bold text-white leading-snug line-clamp-2 group-hover:text-blue-300 transition-colors mb-2">
             {{ item.name }}
           </h2>
-          <p class="text-sm text-gray-500 line-clamp-2 leading-relaxed">{{ item.description }}</p>
+          <p class="text-sm text-gray-300 line-clamp-2 leading-relaxed">{{ item.description }}</p>
 
-          <div class="flex items-center justify-end mt-4 pt-3 border-t border-white/5">
-            <span class="text-xs text-gray-600 group-hover:text-white transition-colors flex items-center gap-1">
+          <div class="flex items-center justify-end mt-4 pt-3 border-t border-white/10">
+            <span class="text-xs text-gray-400 group-hover:text-white transition-colors flex items-center gap-1">
               Voir l'équipement
               <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />

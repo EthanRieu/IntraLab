@@ -207,6 +207,7 @@ model users {
   role_id                                       String             @db.Uuid
   class_id                                      String?            @db.Uuid
   spec_id                                       String?            @db.Uuid
+  profile_picture_url                           String?            @db.VarChar(500)
   active                                        Boolean?           @default(true)
   deleted                                       Boolean?           @default(false)
   created_at                                    DateTime?          @default(now()) @db.Timestamptz(6)

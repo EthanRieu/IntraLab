@@ -21,12 +21,11 @@ const specializations = ref<any[]>([]);
 
 onMounted(async () => {
   try {
-    const [classesRes, specsRes] = await Promise.all([
-      $fetch<{ data: { classes: any[] } }>('/api/classes'),
-      $fetch<{ data: { specializations: any[] } }>('/api/specializations')
-    ]);
-    if (classesRes.data) classes.value = classesRes.data.classes;
-    if (specsRes.data) specializations.value = specsRes.data.specializations;
+    const res = await $fetch<{ data: { classes: any[]; specializations: any[] } }>('/api/classes');
+    if (res.data) {
+      classes.value = res.data.classes;
+      specializations.value = res.data.specializations;
+    }
   } catch (e) {
     console.error('Failed to load form options', e);
   }
@@ -59,15 +58,21 @@ const handleRegister = async () => {
 </script>
 
 <template>
-  <div class="min-h-[calc(100vh-100px)] flex flex-col items-center justify-center relative -mt-10 overflow-hidden">
+  <div class="min-h-[calc(100vh-100px)] flex flex-col relative -mt-10 overflow-hidden">
 
     <!-- Ambient Backlight -->
     <div
       class="absolute w-[80vw] md:w-[600px] h-[80vw] md:h-[600px] bg-[#222E42]/10 blur-[150px] rounded-full z-0 pointer-events-none">
     </div>
 
+    <!-- Title -->
+    <div class="relative z-10 px-6 md:px-24 pt-24 mb-8">
+      <h1 class="text-6xl font-bold text-white uppercase">Créer un compte.</h1>
+    </div>
+
     <!-- Main Login Container (The Floating Module) -->
-    <div class="w-full max-w-[460px] relative z-10 px-4">
+    <div class="flex-1 flex items-center justify-center px-4 pb-8">
+    <div class="w-full max-w-[460px] relative z-10">
 
       <GlassSurface :border-radius="20" :opacity="0.25" :border-width="0.08" :brightness="60" :blur="24" width="100%"
         height="auto" class="px-8 pt-10 pb-12">
@@ -80,15 +85,15 @@ const handleRegister = async () => {
           </div>
 
           <!-- First/Last Name Row -->
-          <div class="flex gap-4 mb-6">
-            <div class="relative w-1/2">
+          <div class="flex flex-col sm:flex-row gap-4 mb-6">
+            <div class="relative w-full sm:w-1/2">
               <label class="block text-[11px] font-bold text-gray-100 uppercase tracking-[0.15em] mb-2 drop-shadow-md">
                 Nom
               </label>
               <input v-model="lastName" type="text" required placeholder="Doe"
                 class="w-full px-5 py-3.5 bg-[#101115]/90 border border-white/5 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-white/20 focus:bg-[#15171d]/90 transition-all font-medium text-sm shadow-[inset_0_2px_10px_rgba(0,0,0,0.5)]" />
             </div>
-            <div class="relative w-1/2">
+            <div class="relative w-full sm:w-1/2">
               <label class="block text-[11px] font-bold text-gray-100 uppercase tracking-[0.15em] mb-2 drop-shadow-md">
                 Prénom
               </label>
@@ -107,8 +112,8 @@ const handleRegister = async () => {
           </div>
 
           <!-- Classe / Spécialisation Row -->
-          <div class="flex gap-4 mb-6 relative z-20">
-            <div class="relative w-1/2">
+          <div class="flex flex-col sm:flex-row gap-4 mb-6 relative z-20">
+            <div class="relative w-full sm:w-1/2">
               <label class="block text-[11px] font-bold text-gray-100 uppercase tracking-[0.15em] mb-2 drop-shadow-md">
                 Classe
               </label>
@@ -123,7 +128,7 @@ const handleRegister = async () => {
               </svg>
             </div>
 
-            <div class="relative w-1/2">
+            <div class="relative w-full sm:w-1/2">
               <label class="block text-[11px] font-bold text-gray-100 uppercase tracking-[0.15em] mb-2 drop-shadow-md">
                 Spé (Optionnel)
               </label>
@@ -168,6 +173,7 @@ const handleRegister = async () => {
           </div>
         </form>
       </GlassSurface>
+    </div>
     </div>
   </div>
 </template>

@@ -1,3 +1,5 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import { z } from 'zod';
 import prisma from '../../../utils/prisma';
 import { requireAdmin, handleAuthError } from '../../../middleware/auth';
@@ -141,10 +143,23 @@ async function updateArticleStatus(
 
     if (status === 'published') {
       updateData.published_at = new Date();
-      updateData.rejection_reason = null; // Nettoyer une éventuelle raison de rejet précédente
+      updateData.rejection_reason = null;
     } else {
       updateData.rejection_reason = rejectionReason;
       updateData.published_at = null;
+      // Supprimer les images du disque si l'article est refusé
+      const imagePaths = existingArticle.images as string[] | null;
+      if (imagePaths && imagePaths.length > 0) {
+        for (const imgPath of imagePaths) {
+          try {
+            const filePath = path.join(process.cwd(), 'public', imgPath);
+            if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+          } catch (e) {
+            console.error('Erreur suppression image article:', e);
+          }
+        }
+        updateData.images = [];
+      }
     }
 
     const updatedArticle = await tx.articles.update({

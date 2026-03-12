@@ -6,10 +6,29 @@ import { useChat } from '~/composables/useChat';
 const { isAuthenticated, user, logout, token } = useAuth();
 const isDropdownOpen = ref(false);
 const avatarUrl = ref<string | null>(null);
+const userFirstName = ref<string>('');
+const userLastName = ref<string>('');
+
+const decodeToken = (t: string | null): { roleSlug?: string; userId?: string } => {
+    if (!t) return {};
+    try {
+        const part = t.split('.')[1];
+        if (!part) return {};
+        return JSON.parse(atob(part.replace(/-/g, '+').replace(/_/g, '/')));
+    } catch {
+        return {};
+    }
+};
+
+const getRoleFromToken = (t: string | null): string | null => decodeToken(t).roleSlug ?? null;
+
+const isAdmin = computed(() => ['rp', 'admin'].includes(getRoleFromToken(token.value) ?? ''));
 
 const getInitials = () => {
-    if (!user.value || !user.value.firstName || !user.value.lastName) return 'U';
-    return `${user.value.firstName[0]}${user.value.lastName[0]}`.toUpperCase();
+    const first = user.value?.firstName || userFirstName.value;
+    const last = user.value?.lastName || userLastName.value;
+    if (!first || !last) return '?';
+    return `${first[0]}${last[0]}`.toUpperCase();
 };
 
 const dropdownRef = ref<HTMLElement | null>(null);
@@ -25,7 +44,7 @@ const closeDropdown = (e: MouseEvent) => {
 };
 
 // Fetch initial chat sessions to check for unread messages
-const { data: chatData } = useFetch<any>('/api/chat/session', {
+const { data: chatData, refresh: refreshChatData } = useFetch<any>('/api/chat/session', {
     headers: computed(() => (token.value ? { Authorization: `Bearer ${token.value}` } : {}) as HeadersInit),
     server: false,
     immediate: true,
@@ -95,21 +114,73 @@ const formatNotifDate = (dateStr: string) => {
 };
 
 // Real-time WebSocket
-const { connect, on } = useChat();
+// Mobile menu
+const isMobileMenuOpen = ref(false);
+const toggleMobileMenu = () => {
+    isMobileMenuOpen.value = !isMobileMenuOpen.value;
+};
+const closeMobileMenu = () => {
+    isMobileMenuOpen.value = false;
+};
+
+const { connect, on, currentSessionId } = useChat();
 let unsubscribers: (() => void)[] = [];
 
-onMounted(() => {
+const loadUserData = async (t: string | null) => {
+    if (!t) {
+        avatarUrl.value = null;
+        userFirstName.value = '';
+        userLastName.value = '';
+        return;
+    }
+    const userId = decodeToken(t).userId;
+    if (!userId) return;
+    try {
+        const res = await $fetch<{ success: boolean; data: { user: { firstName: string; lastName: string; profilePictureUrl?: string | null } } }>(
+            `/api/users/${userId}`,
+            { headers: { Authorization: `Bearer ${t}` } }
+        );
+        const { firstName, lastName, profilePictureUrl } = res?.data?.user ?? {};
+        userFirstName.value = firstName ?? '';
+        userLastName.value = lastName ?? '';
+        if (profilePictureUrl) {
+            avatarUrl.value = profilePictureUrl;
+            localStorage.setItem('user_avatar_url', profilePictureUrl);
+        } else {
+            avatarUrl.value = null;
+            localStorage.removeItem('user_avatar_url');
+        }
+    } catch {
+        avatarUrl.value = null;
+        localStorage.removeItem('user_avatar_url');
+    }
+};
+
+watch(token, (newToken) => {
+    loadUserData(newToken);
+}, { immediate: false });
+
+onMounted(async () => {
     document.addEventListener('click', closeDropdown);
     document.addEventListener('click', closeNotif);
-    const stored = localStorage.getItem('user_avatar_url');
-    if (stored) avatarUrl.value = stored;
+
+    await loadUserData(token.value);
 
     if (token.value) {
         connect(token.value);
 
-        // Listen for unread message badge (sent by server to non-room recipients)
-        unsubscribers.push(on('unread_message', () => {
-            hasUnreadMessages.value = true;
+        // Show badge only if the incoming message is NOT for the conversation currently open
+        unsubscribers.push(on('new_message', (data: any) => {
+            const msg = data.message;
+            if (!msg) return;
+            if (msg.sessionId !== currentSessionId.value) {
+                hasUnreadMessages.value = true;
+            }
+        }));
+
+        // Clear badge when messages are marked as read (user opened a conversation)
+        unsubscribers.push(on('messages_marked_read', async () => {
+            await refreshChatData();
         }));
 
         // Listen for real-time notifications
@@ -132,7 +203,7 @@ onUnmounted(() => {
 
 <template>
     <header
-        class="fixed top-0 left-0 right-0 z-50 w-full bg-[#1A1A1A]/80 backdrop-blur-md border-b border-white/10 h-[80px] flex items-center justify-between px-6 md:px-12">
+        class="fixed top-0 left-0 right-0 z-50 w-full h-[80px] flex items-center justify-between px-6 md:px-12 header-frozen">
         <!-- Logo (Left) -->
         <div class="flex-1">
             <NuxtLink to="/" class="text-2xl font-bold font-mono tracking-wide text-white">IntraLab</NuxtLink>
@@ -152,7 +223,18 @@ onUnmounted(() => {
         </nav>
 
         <!-- CTA / Auth Button (Right) -->
-        <div class="flex-1 flex justify-end items-center gap-4">
+        <div class="flex-1 flex justify-end items-center gap-3">
+            <!-- Hamburger button (mobile only) -->
+            <button @click="toggleMobileMenu"
+                class="md:hidden p-2 text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-white/5"
+                :aria-label="isMobileMenuOpen ? 'Fermer le menu' : 'Ouvrir le menu'">
+                <svg v-if="!isMobileMenuOpen" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+                <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
             <NuxtLink v-if="!isAuthenticated" to="/Auth/signIn"
                 class="px-6 py-2 bg-white text-black font-extrabold rounded-full hover:bg-gray-200 transition-colors text-sm tracking-wide">
                 Se connecter
@@ -161,7 +243,7 @@ onUnmounted(() => {
             <template v-else>
                 <!-- Messages Button -->
                 <NuxtLink to="/Messages" class="p-2 text-gray-400 hover:text-white transition-colors relative"
-                    title="Messagerie" @click="hasUnreadMessages = false">
+                    title="Messagerie">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
                         stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -236,6 +318,36 @@ onUnmounted(() => {
                         <div v-if="isDropdownOpen"
                             class="absolute right-0 mt-3 w-48 rounded-2xl bg-[#1A1A1A] border border-white/10 shadow-2xl py-2 z-50 overflow-hidden backdrop-blur-xl origin-top-right">
 
+                            <NuxtLink v-if="isAdmin" to="/Admin/returns" @click="isDropdownOpen = false"
+                                class="flex items-center gap-3 px-4 py-3 text-sm text-gray-300 hover:text-white hover:bg-white/5 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                                </svg>
+                                Gestion retours
+                            </NuxtLink>
+
+                            <NuxtLink v-if="isAdmin" to="/Admin/articles" @click="isDropdownOpen = false"
+                                class="flex items-center gap-3 px-4 py-3 text-sm text-gray-300 hover:text-white hover:bg-white/5 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                Articles en attente
+                            </NuxtLink>
+
+                            <NuxtLink v-if="isAdmin" to="/Admin/users" @click="isDropdownOpen = false"
+                                class="flex items-center gap-3 px-4 py-3 text-sm text-gray-300 hover:text-white hover:bg-white/5 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                </svg>
+                                Modération comptes
+                            </NuxtLink>
+
                             <NuxtLink to="/Dashboard" @click="isDropdownOpen = false"
                                 class="flex items-center gap-3 px-4 py-3 text-sm text-gray-300 hover:text-white hover:bg-white/5 transition-colors">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
@@ -246,7 +358,7 @@ onUnmounted(() => {
                                 Profil
                             </NuxtLink>
 
-                            <NuxtLink to="#" @click.prevent="isDropdownOpen = false"
+                            <NuxtLink to="/Settings" @click="isDropdownOpen = false"
                                 class="flex items-center gap-3 px-4 py-3 text-sm text-gray-300 hover:text-white hover:bg-white/5 transition-colors">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
                                     stroke="currentColor">
@@ -275,9 +387,107 @@ onUnmounted(() => {
             </template>
         </div>
     </header>
+
+    <!-- Mobile Menu Drawer -->
+    <Teleport to="body">
+        <Transition name="mobile-menu">
+            <div v-if="isMobileMenuOpen"
+                class="fixed top-[80px] left-0 right-0 z-40 md:hidden mobile-menu-panel px-4 py-4">
+                <nav class="flex flex-col gap-1">
+                    <NuxtLink to="/" exact-active-class="text-white bg-white/10"
+                        class="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-300 hover:text-white hover:bg-white/5 transition-colors font-medium"
+                        @click="closeMobileMenu">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                        </svg>
+                        Accueil
+                    </NuxtLink>
+                    <NuxtLink to="/Blog/blog" active-class="text-white bg-white/10"
+                        class="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-300 hover:text-white hover:bg-white/5 transition-colors font-medium"
+                        @click="closeMobileMenu">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
+                        </svg>
+                        Blog
+                    </NuxtLink>
+                    <NuxtLink to="/Loans" active-class="text-white bg-white/10"
+                        class="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-300 hover:text-white hover:bg-white/5 transition-colors font-medium"
+                        @click="closeMobileMenu">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                        </svg>
+                        Emprunts
+                    </NuxtLink>
+                    <NuxtLink to="/MarketPlace" active-class="text-white bg-white/10"
+                        class="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-300 hover:text-white hover:bg-white/5 transition-colors font-medium"
+                        @click="closeMobileMenu">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                        Marketplace
+                    </NuxtLink>
+
+                    <div v-if="!isAuthenticated" class="mt-2 pt-2 border-t border-white/10">
+                        <NuxtLink to="/Auth/signIn" @click="closeMobileMenu"
+                            class="flex items-center justify-center w-full px-6 py-3 bg-white text-black font-extrabold rounded-full hover:bg-gray-200 transition-colors text-sm tracking-wide">
+                            Se connecter
+                        </NuxtLink>
+                    </div>
+                </nav>
+            </div>
+        </Transition>
+    </Teleport>
 </template>
 
 <style scoped>
+/* Frozen glass header */
+.header-frozen {
+    background: linear-gradient(
+        135deg,
+        rgba(180, 200, 255, 0.04) 0%,
+        rgba(140, 170, 255, 0.06) 50%,
+        rgba(180, 200, 255, 0.04) 100%
+    );
+    backdrop-filter: blur(40px) saturate(180%) brightness(0.75);
+    -webkit-backdrop-filter: blur(40px) saturate(180%) brightness(0.75);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow:
+        0 1px 0 0 rgba(255, 255, 255, 0.12) inset,
+        0 8px 48px 0 rgba(0, 0, 0, 0.6);
+}
+
+/* Mobile menu panel */
+.mobile-menu-panel {
+    background: linear-gradient(
+        135deg,
+        rgba(180, 200, 255, 0.06) 0%,
+        rgba(140, 170, 255, 0.08) 50%,
+        rgba(180, 200, 255, 0.06) 100%
+    );
+    backdrop-filter: blur(40px) saturate(180%) brightness(0.75);
+    -webkit-backdrop-filter: blur(40px) saturate(180%) brightness(0.75);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 8px 48px 0 rgba(0, 0, 0, 0.6);
+}
+
+/* Mobile menu transition */
+.mobile-menu-enter-active,
+.mobile-menu-leave-active {
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.mobile-menu-enter-from,
+.mobile-menu-leave-to {
+    opacity: 0;
+    transform: translateY(-10px);
+}
+
+.mobile-menu-enter-to,
+.mobile-menu-leave-from {
+    opacity: 1;
+    transform: translateY(0);
+}
+
 /* Animated Dropdown Transitions */
 .dropdown-enter-active,
 .dropdown-leave-active {

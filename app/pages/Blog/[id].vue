@@ -27,7 +27,7 @@
     <!-- Article Content -->
     <div v-else-if="article">
       <!-- Hero Section -->
-      <div class="relative w-full h-[400px] rounded-[32px] overflow-hidden mb-12 shadow-2xl">
+      <div class="relative w-full h-[260px] sm:h-[400px] rounded-[24px] sm:rounded-[32px] overflow-hidden mb-8 sm:mb-12 shadow-2xl">
         <!-- Image -->
         <img v-if="article.images && article.images.length > 0" :src="article.images[0]" :alt="article.title"
           class="w-full h-full object-cover" />
@@ -43,19 +43,22 @@
         <div class="absolute inset-0 bg-gradient-to-t from-[#111] via-[#111]/40 to-transparent"></div>
 
         <!-- Title & Meta -->
-        <div class="absolute bottom-0 left-0 w-full p-8 md:p-12">
+        <div class="absolute bottom-0 left-0 w-full p-5 sm:p-8 md:p-12">
           <span v-if="article.category"
-            class="inline-block px-3 py-1 bg-blue-500/20 text-blue-300 rounded-full text-xs font-bold tracking-wider uppercase mb-4 border border-blue-500/30">
+            class="inline-block px-3 py-1 bg-blue-500/20 text-blue-300 rounded-full text-xs font-bold tracking-wider uppercase mb-3 border border-blue-500/30">
             {{ article.category }}
           </span>
-          <h1 class="text-4xl md:text-5xl font-extrabold text-white leading-tight mb-4 shadow-black/50 drop-shadow-lg">
+          <h1 class="text-2xl sm:text-4xl md:text-5xl font-extrabold text-white leading-tight mb-3 sm:mb-4 shadow-black/50 drop-shadow-lg">
             {{ article.title }}
           </h1>
           <div class="flex items-center gap-4 text-gray-300 text-sm">
             <div class="flex items-center gap-2">
               <div
                 class="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center font-bold text-white shadow-lg overflow-hidden border border-white/20">
-                <span v-if="article.author" class="text-xs">
+                <img v-if="article.author?.avatarUrl" :src="article.author.avatarUrl"
+                  :alt="`${article.author.firstName} ${article.author.lastName}`"
+                  class="w-full h-full object-cover" />
+                <span v-else-if="article.author" class="text-xs">
                   {{ article.author.firstName[0] }}{{ article.author.lastName[0] }}
                 </span>
                 <span v-else>?</span>
@@ -96,6 +99,7 @@ interface User {
   id: string;
   firstName: string;
   lastName: string;
+  avatarUrl?: string | null;
 }
 
 interface Article {

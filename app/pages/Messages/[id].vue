@@ -3,15 +3,29 @@
         <!-- Top Glow -->
         <div class="absolute top-0 right-0 w-1/2 h-32 bg-primary-500/10 blur-[100px] pointer-events-none"></div>
 
-        <!-- Header -->
+        <!-- Header: sticky at top so it stays visible when keyboard opens -->
         <div
-            class="p-6 border-b border-white/10 shrink-0 relative z-10 flex justify-between items-center bg-[#1A1A1A]/80 backdrop-blur-md">
-            <div class="flex items-center gap-4">
-                <div
-                    class="h-10 w-10 rounded-full bg-[#f8f9fa] flex items-center justify-center font-bold shrink-0 border border-white/20">
-                    <span class="bg-custom-gradient bg-clip-text text-transparent text-lg tracking-wider">
-                        {{ getInitials(chatName) }}
-                    </span>
+            class="sticky top-0 p-4 md:p-6 border-b border-white/10 shrink-0 z-10 flex justify-between items-center bg-[#1A1A1A]/80 backdrop-blur-md">
+            <div class="flex items-center gap-3">
+                <!-- Back button — mobile only -->
+                <NuxtLink to="/Messages"
+                    class="md:hidden p-1.5 -ml-1 text-gray-400 hover:text-white transition-colors shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                    </svg>
+                </NuxtLink>
+                <div class="h-10 w-10 rounded-full shrink-0 border border-white/20 overflow-hidden">
+                    <img v-if="sessionInfo?.otherParticipant?.avatar"
+                        :src="sessionInfo.otherParticipant.avatar"
+                        :alt="chatName"
+                        class="h-full w-full object-cover rounded-full" />
+                    <div v-else
+                        class="h-full w-full bg-[#f8f9fa] flex items-center justify-center font-bold">
+                        <span class="bg-custom-gradient bg-clip-text text-transparent text-lg tracking-wider">
+                            {{ getInitials(chatName) }}
+                        </span>
+                    </div>
                 </div>
                 <div>
                     <h2 class="text-lg font-bold text-white">{{ chatName }}</h2>
@@ -20,9 +34,9 @@
             </div>
         </div>
 
-        <!-- Messages Area -->
+        <!-- Messages Area: min-h-0 prevents flex overflow, allows proper keyboard resize -->
         <div ref="messagesContainer"
-            class="flex-1 overflow-y-auto custom-scrollbar p-6 flex flex-col gap-4 relative z-10"
+            class="flex-1 min-h-0 overflow-y-auto custom-scrollbar p-6 flex flex-col gap-4 relative z-10"
             @scroll="handleScroll">
             <div v-if="pending" class="flex justify-center py-4">
                 <div class="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-primary-500"></div>
@@ -41,7 +55,10 @@
 
             <!-- Render Messages -->
             <div v-for="(msg, index) in messages" :key="msg.id" class="flex w-full group relative"
-                :class="msg.senderId === currentUserId ? 'justify-end' : 'justify-start'">
+                :class="msg.senderId === currentUserId ? 'justify-end' : 'justify-start'"
+                @touchstart="onTouchStart(msg)"
+                @touchend="onTouchEnd"
+                @touchmove="onTouchEnd">
 
                 <div class="max-w-[75%] flex flex-col relative"
                     :class="msg.senderId === currentUserId ? 'items-end' : 'items-start'">
@@ -173,8 +190,58 @@
             </div>
         </div>
 
-        <!-- Input Area -->
-        <div class="p-4 md:p-6 border-t border-white/10 bg-[#1A1A1A] relative z-20">
+        <!-- Mobile Long-Press Bottom Sheet -->
+        <Teleport to="body">
+            <Transition name="sheet">
+                <div v-if="activeMobileMenuMsg" class="fixed inset-0 z-50 md:hidden flex flex-col justify-end"
+                    @click.self="activeMobileMenuMsg = null">
+                    <div class="absolute inset-0 bg-black/50" @click="activeMobileMenuMsg = null"></div>
+                    <div class="relative bg-[#1A1A1A] border-t border-white/10 rounded-t-2xl p-4 pb-8 space-y-1">
+                        <!-- Emoji reactions row -->
+                        <div class="flex justify-around pb-3 mb-1 border-b border-white/10">
+                            <button v-for="emoji in ['👍', '❤️', '😂', '😮', '😢', '🔥']" :key="emoji"
+                                @click="addReaction(activeMobileMenuMsg!.id, emoji); activeMobileMenuMsg = null"
+                                class="text-2xl w-10 h-10 flex items-center justify-center hover:bg-white/10 rounded-xl transition-all active:scale-125">
+                                {{ emoji }}
+                            </button>
+                        </div>
+                        <!-- Reply -->
+                        <button @click="setReplyTo(activeMobileMenuMsg!); activeMobileMenuMsg = null"
+                            class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-200 hover:bg-white/5 transition-colors text-left">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                            </svg>
+                            Répondre
+                        </button>
+                        <!-- Edit / Delete (own messages only) -->
+                        <template v-if="activeMobileMenuMsg!.senderId === currentUserId && !activeMobileMenuMsg!.isDeleted">
+                            <button @click="editMsg(activeMobileMenuMsg!); activeMobileMenuMsg = null"
+                                class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-200 hover:bg-white/5 transition-colors text-left">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                </svg>
+                                Modifier
+                            </button>
+                            <button @click="deleteMsg(activeMobileMenuMsg!.id); activeMobileMenuMsg = null"
+                                class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-400 hover:bg-red-500/10 transition-colors text-left">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                                Supprimer
+                            </button>
+                        </template>
+                        <!-- Cancel -->
+                        <button @click="activeMobileMenuMsg = null"
+                            class="w-full flex items-center justify-center px-4 py-3 mt-1 rounded-xl text-gray-500 hover:bg-white/5 transition-colors text-sm font-medium">
+                            Annuler
+                        </button>
+                    </div>
+                </div>
+            </Transition>
+        </Teleport>
+
+        <!-- Input Area: sticky at bottom so it stays above the keyboard -->
+        <div class="sticky bottom-0 p-4 md:p-6 border-t border-white/10 bg-[#1A1A1A] z-20">
 
             <!-- Reply Context Banner -->
             <div v-if="replyingTo"
@@ -320,7 +387,11 @@ onMounted(() => {
     const token = useCookie('auth_token').value;
     if (token) {
         connect(token as string);
-        setTimeout(() => joinRoom(sessionId), 500);
+        setTimeout(() => {
+            joinRoom(sessionId);
+            // Mark existing messages as read when opening the conversation
+            setTimeout(() => markRead(), 200);
+        }, 500);
     }
 
     // Bind WS Events
@@ -450,6 +521,23 @@ const setReplyTo = (msg: Message) => {
     replyingTo.value = msg;
     editingMsgId.value = null;
 };
+
+// Mobile long-press context menu
+const activeMobileMenuMsg = ref<Message | null>(null);
+let longPressTimer: ReturnType<typeof setTimeout> | null = null;
+
+const onTouchStart = (msg: Message) => {
+    longPressTimer = setTimeout(() => {
+        activeMobileMenuMsg.value = msg;
+    }, 500);
+};
+
+const onTouchEnd = () => {
+    if (longPressTimer) {
+        clearTimeout(longPressTimer);
+        longPressTimer = null;
+    }
+};
 const showReactionPicker = (id: string) => {
     activeReactionMsgId.value = activeReactionMsgId.value === id ? null : id;
 };
@@ -492,5 +580,22 @@ textarea::-webkit-scrollbar {
 .typing-indicator span {
     animation-duration: 1s;
     animation-iteration-count: infinite;
+}
+
+.sheet-enter-active,
+.sheet-leave-active {
+    transition: opacity 0.2s ease;
+}
+.sheet-enter-active .relative,
+.sheet-leave-active .relative {
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.sheet-enter-from,
+.sheet-leave-to {
+    opacity: 0;
+}
+.sheet-enter-from .relative,
+.sheet-leave-to .relative {
+    transform: translateY(100%);
 }
 </style>

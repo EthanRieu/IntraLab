@@ -92,6 +92,7 @@ async function getUserById(userId: string) {
     lastName: user.last_name,
     email: user.email,
     phone: user.phone,
+    profilePictureUrl: user.profile_picture_url,
     active: user.active,
     createdAt: user.created_at,
     updatedAt: user.updated_at,

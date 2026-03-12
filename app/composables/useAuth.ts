@@ -79,6 +79,9 @@ export const useAuth = () => {
         } finally {
             token.value = null;
             user.value = null;
+            if (typeof localStorage !== 'undefined') {
+                localStorage.removeItem('user_avatar_url');
+            }
             await navigateTo('/Auth/signIn');
         }
     };

@@ -44,12 +44,11 @@ export default defineEventHandler(async (event) => {
 
         const avatarUrl = `/uploads/avatars/${fileName}`;
 
-        // Persist the avatar URL in the user record using the phone field trick — 
-        // actually we store it in a dedicated way: we update updated_at and return the URL.
-        // Since there's no avatar_url column, store it in a side-channel JSON or just return the URL
-        // and let the client persist in localStorage.
-        // For a clean approach, we store the URL as a JSON string in a new column.
-        // Since we cannot migrate here, we return the URL for client-side persistence.
+        // Persist the avatar URL in the database
+        await prisma.users.update({
+            where: { id: userId },
+            data: { profile_picture_url: avatarUrl },
+        });
 
         return {
             success: true,

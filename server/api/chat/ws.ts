@@ -96,15 +96,16 @@ export default defineWebSocketHandler({
                             }
                         };
 
-                        peer.publish(sessionId, JSON.stringify(broadcastPayload));
-                        peer.send(JSON.stringify(broadcastPayload)); // crossws publish doesn't send to self by default
+                        // 4. Send confirmation to sender
+                        peer.send(JSON.stringify(broadcastPayload));
 
-                        // 5. Notify recipients not in the room (for header unread badge)
+                        // 5. Deliver new_message directly to all other participants via wsManager
+                        // (more reliable than peer.publish pub/sub which can lose subscriptions)
                         const recipients = await prisma.chat_participant.findMany({
                             where: { session_id: sessionId, user_id: { not: user.userId } }
                         });
                         for (const recipient of recipients) {
-                            broadcastToUser(recipient.user_id, { type: 'unread_message', sessionId });
+                            broadcastToUser(recipient.user_id, broadcastPayload);
                         }
                     }
                     break;
@@ -242,7 +243,8 @@ export default defineWebSocketHandler({
                             lastReadTime: new Date()
                         });
                         peer.publish(sessionId, broadcastPayload);
-                        // peer.send not needed since reader doesn't need to know they read it immediately
+                        // Notify the reader so the header badge can be cleared
+                        peer.send(JSON.stringify({ type: 'messages_marked_read', sessionId }));
                     }
                     break;
             }

@@ -13,6 +13,9 @@ node_modules
 logs
 *.log
 
+# Uploaded files
+public/uploads/
+
 # Misc
 .DS_Store
 .fleet

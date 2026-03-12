@@ -36,7 +36,7 @@ VALUES
   (uuid_generate_v4(), 'dev',   'Développement Web & Mobile',        true, false),
   (uuid_generate_v4(), 'data',  'Data & Intelligence Artificielle',   true, false),
   (uuid_generate_v4(), 'cyber', 'Cybersécurité',                      true, false),
-  (uuid_generate_v4(), 'infra', 'Infrastructure & Cloud',             true, false),
+  (uuid_generate_v4(), 'infra', 'Infrastructure & Cloud',             true, false)
 ON CONFLICT (slug) DO NOTHING;
 
 -- =============================================================

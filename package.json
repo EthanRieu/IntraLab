@@ -15,8 +15,7 @@
   "dependencies": {
     "@inspira-ui/plugins": "^0.0.2",
     "@prisma/client": "^6.16.2",
-    "@prisma/nuxt": "^0.3.0",
-    "@tailwindcss/vite": "^4.1.13",
+"@tailwindcss/vite": "^4.1.13",
     "@types/bcryptjs": "^2.4.6",
     "@types/jsonwebtoken": "^9.0.10",
     "bcryptjs": "^3.0.2",

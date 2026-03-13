@@ -22,7 +22,14 @@ export default defineNuxtConfig({
   nitro: {
     experimental: {
       websocket: true
-    }
+    },
+    publicAssets: [
+      {
+        dir: 'public',
+        baseURL: '/',
+        maxAge: 3600
+      }
+    ]
   }
 });
 

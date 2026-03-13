@@ -207,7 +207,7 @@ IntraLab/
 | **OS** | Linux (Debian) |
 | **Node.js** | v20+ |
 | **Process manager** | PM2 |
-| **Reverse proxy** | Apache2 (port 80 → 3000) |
+| **Reverse proxy** | Apache2 (port 30240 → 4431) |
 | **WebSocket** | Apache2 RewriteRule WS |
 | **Variables d'env** | `.env.production` |
 | **Migrations** | `npx prisma migrate deploy` |

@@ -23,13 +23,6 @@ export default defineNuxtConfig({
     experimental: {
       websocket: true
     },
-    publicAssets: [
-      {
-        dir: 'public',
-        baseURL: '/',
-        maxAge: 3600
-      }
-    ]
   }
 });
 
